@@ -19,18 +19,19 @@ yt_dlp.utils.bug_reports_message = _suppress_bug_reports
 # YouTube music bot với yt-dlp
 ytdl_format_options = {
     'format': 'bestaudio/best',
-    'noplaylist': True,
+    'noplaylist': False,  # Cho phép playlist
     'quiet': True,
     'no_warnings': True,
     'default_search': 'auto',
     'source_address': '0.0.0.0',
-    'ignoreerrors': False,
+    'ignoreerrors': True,  # Bỏ qua lỗi trong playlist
     'restrictfilenames': True,
     'nocheckcertificate': True,
     'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
     'logtostderr': False,
     'age_limit': 18,
     'extract_flat': False,
+    'playlistend': 50,  # Giới hạn 50 bài để tránh spam
     'http_headers': {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36'
     }
@@ -933,14 +934,91 @@ class MusicCog(commands.Cog):
         async with ctx.typing():
             url_pattern = re.compile(r'https?://')
             if url_pattern.match(search):
-                # Hỗ trợ YouTube URLs
+                # Hỗ trợ YouTube URLs và Playlists
                 try:
                     loop = self.bot.loop or asyncio.get_event_loop()
                     def extract_url_info():
+                        # Cho phép playlist extraction
                         return ytdl.extract_info(search, download=False)
                     data = await loop.run_in_executor(None, extract_url_info)
-                    if 'entries' in data:
+                    
+                    # Kiểm tra nếu là playlist
+                    if 'entries' in data and len(data['entries']) > 1:
+                        # Đây là playlist
+                        playlist_title = data.get('title', 'YouTube Playlist')
+                        entries = data['entries']
+                        
+                        await ctx.send(f"🎵 Đang thêm playlist: **{playlist_title}** ({len(entries)} bài hát)...")
+                        
+                        queue = self.get_queue(ctx.guild.id)
+                        added_count = 0
+                        
+                        # Thêm từng bài vào queue
+                        for i, entry in enumerate(entries):
+                            if entry:  # Kiểm tra entry không null
+                                try:
+                                    if not ctx.voice_client.is_playing() and not ctx.voice_client.is_paused() and i == 0:
+                                        # Phát bài đầu tiên ngay
+                                        player = await self.create_player(entry, ctx.guild.id)
+                                        queue.current = entry
+                                        
+                                        def after_playing(error):
+                                            if error:
+                                                print(f"❌ Player error: {error}")
+                                                if self.is_ffmpeg_expected_error(str(error)):
+                                                    print(f"✅ Expected FFmpeg error - continuing normally")
+                                                else:
+                                                    print(f"⚠️ Unexpected error: {error}")
+                                            else:
+                                                print(f"✅ Song finished playing normally")
+                                            
+                                            if ctx.voice_client and ctx.voice_client.is_connected():
+                                                try:
+                                                    coro = self.play_next(ctx)
+                                                    asyncio.run_coroutine_threadsafe(coro, self.bot.loop)
+                                                except Exception as next_error:
+                                                    print(f"❌ Error scheduling next song: {next_error}")
+                                        
+                                        ctx.voice_client.play(player, after=after_playing)
+                                        added_count += 1
+                                        
+                                        # Hiển thị embed cho bài đầu tiên
+                                        platform_info = "🎬 YouTube Playlist"
+                                        embed = discord.Embed(title="🎵 Đang phát từ playlist", description=f"**{player.title}**", color=0x00ff00)
+                                        embed.add_field(name="Nền tảng", value=platform_info, inline=True)
+                                        if player.uploader:
+                                            embed.add_field(name="Kênh", value=player.uploader, inline=True)
+                                        if entry.get('duration'):
+                                            embed.add_field(name="Thời lượng", value=self.format_duration(entry['duration']), inline=True)
+                                        embed.add_field(name="Playlist", value=f"{playlist_title} (bài 1/{len(entries)})", inline=False)
+                                        if player.thumbnail:
+                                            embed.set_thumbnail(url=player.thumbnail)
+                                        
+                                        view = MusicControlView(self.bot, ctx.guild.id)
+                                        view.message = await ctx.send(embed=embed, view=view)
+                                        
+                                        # Đăng ký message để auto cleanup sau 10 phút
+                                        auto_cleanup_cog = self.bot.get_cog('AutoCleanupCog')
+                                        if auto_cleanup_cog:
+                                            auto_cleanup_cog.add_message_for_cleanup(view.message, delete_after=600)
+                                    else:
+                                        # Thêm vào queue
+                                        queue.add(entry)
+                                        added_count += 1
+                                except Exception as e:
+                                    print(f"❌ Error processing playlist entry {i+1}: {e}")
+                                    continue
+                        
+                        if added_count > 1:
+                            await ctx.send(f"✅ Đã thêm **{added_count}** bài hát từ playlist vào queue!")
+                        elif added_count == 0:
+                            await ctx.send("❌ Không thể thêm bài hát nào từ playlist!")
+                        return
+                        
+                    elif 'entries' in data:
+                        # Single video from playlist URL
                         data = data['entries'][0]
+                    
                     if not data:
                         await ctx.send("❌ Không thể tải nhạc từ URL này!")
                         return
