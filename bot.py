@@ -8,7 +8,13 @@ from dotenv import load_dotenv # type: ignore
 from utils.database import DatabaseManager
 
 # Load environment variables
-load_dotenv()
+# Ưu tiên .env.local (cho development) rồi mới .env (template)
+if os.path.exists('.env.local'):
+    load_dotenv('.env.local')
+    print("🔧 Loaded development environment (.env.local)")
+else:
+    load_dotenv()
+    print("🔧 Loaded production environment (.env)")
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
