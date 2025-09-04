@@ -1183,14 +1183,12 @@ class MusicCog(commands.Cog):
 
     # =============== SLASH COMMANDS ===============
     
-    @ChannelManager.music_only()
     @app_commands.command(name="play", description="Phát nhạc từ YouTube")
     @app_commands.describe(search="Tên bài hát hoặc URL YouTube")
     async def slash_play(self, interaction: discord.Interaction, search: str):
         """Slash command for playing music"""
         await self.play_command(interaction, search)
     
-    @ChannelManager.music_only()
     @app_commands.command(name="pause", description="Tạm dừng nhạc")
     async def slash_pause(self, interaction: discord.Interaction):
         """Slash command for pausing music"""
@@ -1200,7 +1198,6 @@ class MusicCog(commands.Cog):
         else:
             await interaction.response.send_message("❌ Không có nhạc đang phát!", ephemeral=True)
     
-    @ChannelManager.music_only()
     @app_commands.command(name="resume", description="Tiếp tục phát nhạc")
     async def slash_resume(self, interaction: discord.Interaction):
         """Slash command for resuming music"""
