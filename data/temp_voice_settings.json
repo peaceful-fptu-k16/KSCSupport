@@ -1,0 +1,11 @@
+{
+  "495145412240343042": {
+    "enabled": true,
+    "join_to_create_channel": 1413015897903464469,
+    "temp_channel_category": 1413015895319642182,
+    "default_name": "🎤 {user}'s Channel",
+    "default_limit": 0,
+    "auto_delete": true,
+    "channel_prefix": "🎤"
+  }
+}
