@@ -1,6 +1,6 @@
 {
   "458153268531429377": {
-    "total_plays": 20,
+    "total_plays": 21,
     "favorite_artists": {
       "Vimistic": 1,
       "Hidro NAtri": 1,
@@ -11,9 +11,9 @@
       "Vie Russes de Pêtr": 1,
       "Lucin3x": 1,
       "Quang Bao": 5,
-      "dxeg": 5
+      "dxeg": 6
     },
-    "listening_time": 44384.04800000001,
+    "listening_time": 47641.13400000001,
     "tracks_played": [
       {
         "title": "Âm Thầm Bên Em | Sơn Tùng M-TP | Vimistic Remake",
@@ -114,6 +114,11 @@
         "title": "nghich ngom 2 - dang x dung",
         "artist": "dxeg",
         "played_at": "2025-09-04T14:01:27.405828"
+      },
+      {
+        "title": "nghich ngom 2 - dang x dung",
+        "artist": "dxeg",
+        "played_at": "2025-09-04T14:09:42.361430"
       }
     ]
   }

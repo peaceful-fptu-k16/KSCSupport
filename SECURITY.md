@@ -24,6 +24,9 @@ OPENAI_API_KEY=sk-proj-YourActualOpenAIKeyHere
 # Google Gemini API Key - Lấy từ https://makersuite.google.com/app/apikey
 GEMINI_API_KEY=YourActualGeminiKeyHere
 
+# Riot Games API Key - Lấy từ https://developer.riotgames.com/
+RIOT_API_KEY=RGAPI-YourActualRiotKeyHere
+
 # Discord User ID - Right click Discord profile → "Copy User ID"
 DISCORD_OWNER_ID=123456789012345678
 ```
@@ -42,10 +45,11 @@ DISCORD_OWNER_ID=123456789012345678
 3. Create new secret key
 4. Copy và lưu key (chỉ hiển thị 1 lần)
 
-#### Gemini API Key:
-1. Truy cập [Google AI Studio](https://makersuite.google.com/)
-2. Create API Key
-3. Copy key
+#### Riot Games API Key:
+1. Truy cập [Riot Developer Portal](https://developer.riotgames.com/)
+2. Đăng nhập với tài khoản Riot
+3. Tạo Personal API Key (miễn phí)
+4. Copy key (key chỉ có hiệu lực 24h cho development)
 
 ### 4. Bảo mật quan trọng
 
@@ -73,6 +77,7 @@ Nếu thấy lỗi "Discord bot token not found!", kiểm tra lại file `.env`.
 | `DISCORD_BOT_TOKEN` | ✅ | Token bot Discord |
 | `OPENAI_API_KEY` | ✅ | API key cho ChatGPT/AI features |  
 | `GEMINI_API_KEY` | ✅ | Google Gemini AI key |
+| `RIOT_API_KEY` | ❌ | Riot Games API key cho LoL features |
 | `DISCORD_OWNER_ID` | ✅ | User ID owner bot |
 | `DATABASE_URL` | ❌ | External database URL (optional) |
 
@@ -88,6 +93,7 @@ Nếu thấy lỗi "Discord bot token not found!", kiểm tra lại file `.env`.
 - Kiểm tra balance/quota của API keys
 - Kiểm tra internet connection
 
-### Không thể sử dụng admin commands
-- Kiểm tra `DISCORD_OWNER_ID` có đúng User ID không
-- Kiểm tra bot có role/permissions đủ quyền
+### LoL features không hoạt động
+- Kiểm tra RIOT_API_KEY có đúng không
+- Riot API key chỉ có hiệu lực 24h cho development key
+- Kiểm tra kết nối đến Riot API servers

@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 import random
 import re
 from bs4 import BeautifulSoup
+import os
 
 class LeagueOfLegends(commands.Cog):
     """League of Legends related commands"""
@@ -17,7 +18,10 @@ class LeagueOfLegends(commands.Cog):
         self.bot = bot
         self.base_url = "https://ddragon.leagueoflegends.com"
         self.riot_api_base = "https://kr.api.riotgames.com"  # Thay đổi sang KR server
-        self.riot_api_key = "RGAPI-b1ea1263-d2ff-4fa1-b214-e245b0f1adb6"
+        self.riot_api_key = os.getenv('RIOT_API_KEY')
+        
+        if not self.riot_api_key:
+            print("⚠️ RIOT_API_KEY not found in environment variables!")
         
         # Cache cho champion data
         self.champions_cache = {}
