@@ -1,6 +1,6 @@
 @echo off
 echo ========================================
-echo   GenZ Assistant Bot - Setup Script
+echo   KSC Music Bot - Setup
 echo ========================================
 echo.
 
@@ -38,7 +38,5 @@ echo.
 echo 📋 Các bước tiếp theo:
 echo 1. Mở file .env và điền token thật
 echo 2. Chạy: python bot.py
-echo.
-echo 📖 Xem hướng dẫn chi tiết: SECURITY.md
 echo.
 pause

@@ -1,209 +1,129 @@
-import discord # type: ignore
-from discord.ext import commands # type: ignore
-import json
-import os
 import asyncio
 import logging
-from dotenv import load_dotenv # type: ignore
-from utils.database import DatabaseManager
+import os
+import sys
 
-# Load environment variables
-# Ưu tiên .env.local (cho development) rồi mới .env (template)
-if os.path.exists('.env.local'):
-    load_dotenv('.env.local')
-    print("🔧 Loaded development environment (.env.local)")
-else:
-    load_dotenv()
-    print("🔧 Loaded production environment (.env)")
+import discord
+from discord import app_commands
+from discord.ext import commands
+from dotenv import load_dotenv
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from music.errors import MusicError
 
-class GenZAssistant(commands.Bot):
-    def __init__(self):
-        # Load configuration
-        with open('config.json', 'r', encoding='utf-8') as f:
-            self.config = json.load(f)
-        
-        # Set up intents
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
+load_dotenv(".env.local" if os.path.exists(".env.local") else ".env")
+
+logging.basicConfig(
+    level=os.getenv("LOG_LEVEL", "INFO").upper(),
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+)
+logger = logging.getLogger("ksc-music")
+
+
+class MusicCommandTree(app_commands.CommandTree):
+    async def on_error(
+        self,
+        interaction: discord.Interaction,
+        error: app_commands.AppCommandError,
+    ) -> None:
+        original = getattr(error, "original", error)
+        if isinstance(original, MusicError):
+            message = original.message
+        else:
+            logger.error(
+                "app_command_failed guild_id=%s user_id=%s command=%s error=%s",
+                interaction.guild_id,
+                interaction.user.id,
+                interaction.command.name if interaction.command else None,
+                original,
+            )
+            message = "Không thể thực hiện thao tác lúc này. Hãy thử lại sau nhé."
+
+        if interaction.response.is_done():
+            await interaction.followup.send(message, ephemeral=True)
+        else:
+            await interaction.response.send_message(message, ephemeral=True)
+
+
+class MusicBot(commands.Bot):
+    def __init__(self) -> None:
         intents = discord.Intents.default()
         intents.message_content = True
-        intents.members = True  # Cần cho welcome/goodbye events
-        intents.guilds = True   # Cần cho server events
-        
-        # Initialize bot
+        intents.voice_states = True
+        intents.members = True
         super().__init__(
-            command_prefix=self.config['prefix'],
+            command_prefix=os.getenv("BOT_PREFIX", "!"),
             intents=intents,
             help_command=None,
-            case_insensitive=True
+            case_insensitive=True,
+            tree_cls=MusicCommandTree,
         )
-        
-        # Initialize database
-        self.db = DatabaseManager(self.config['database_path'])
-        
-    async def setup_hook(self):
-        """Setup hook called when bot is starting up"""
-        # Initialize database
-        await self.db.initialize()
-        
-        # Load all cogs - Clean organized structure
-        cogs_to_load = [
-            # Core Music System
-            'cogs.music_manager',        # Music conflict management system
-            'cogs.universal_music',      # Universal Music Player (Mix SC+YT)
-            'cogs.music',               # YouTube music player
-            'cogs.soundcloud_advanced',  # Advanced SoundCloud features
-            
-            # Voice Features
-            'cogs.temp_voice',          # Temporary Voice Channels (Join-to-Create)
-            
-            # Interactive & UI
-            'cogs.interactive',          # Button-based command interface
-            'cogs.menu_system',         # Menu navigation system
-            
-            # Bot Features
-            'cogs.fun',                 # Fun commands and entertainment
-            'cogs.games',               # Mini games and interactive content
-            'cogs.ai',                  # AI chat and responses
-            'cogs.ai_image_gen',        # AI image generation
-            'cogs.admin',               # Administration and moderation
-            'cogs.scheduler',           # Reminders and scheduling
-            'cogs.utils_commands',      # Utility commands
-            
-            # System & Analytics
-            'cogs.events',              # Server events and logging
-            'cogs.analytics',           # Server analytics and stats
-            'cogs.cleanup',             # Auto cleanup and maintenance
-            'cogs.lol_integration'      # League of Legends integration
-        ]
-        
-        for cog in cogs_to_load:
-            try:
-                await self.load_extension(cog)
-                logger.info(f'Loaded {cog}')
-            except Exception as e:
-                logger.error(f'Failed to load {cog}: {e}')
-    
-    async def on_ready(self):
-        """Called when bot is ready"""
-        logger.info(f'{self.user} has connected to Discord!')
-        logger.info(f'Bot is in {len(self.guilds)} guilds')
-        
-        # Sync slash commands
-        try:
-            synced = await self.tree.sync()
-            logger.info(f'Synced {len(synced)} slash commands')
-        except Exception as e:
-            logger.error(f'Failed to sync slash commands: {e}')
-        
-        # Set bot status
-        activity = discord.Activity(
-            type=discord.ActivityType.listening,
-            name=f"{self.config['prefix']}help | /ask | KSC Support"
+
+    async def setup_hook(self) -> None:
+        await self.load_extension("cogs.music")
+        await self.load_extension("cogs.community")
+        synced = await self.tree.sync()
+        logger.info("Synced %s slash commands", len(synced))
+        guild_id = os.getenv("DISCORD_GUILD_ID", "").strip()
+        if guild_id.isdigit():
+            guild = discord.Object(id=int(guild_id))
+            self.tree.copy_global_to(guild=guild)
+            guild_synced = await self.tree.sync(guild=guild)
+            logger.info(
+                "Synced %s guild slash commands guild_id=%s",
+                len(guild_synced),
+                guild_id,
+            )
+
+    async def on_ready(self) -> None:
+        logger.info("Connected as %s in %s guild(s)", self.user, len(self.guilds))
+        await self.change_presence(
+            activity=discord.Activity(
+                type=discord.ActivityType.listening,
+                name=f"{self.command_prefix}phat | YouTube & SoundCloud",
+            )
         )
-        await self.change_presence(activity=activity)
-    
-    async def on_message(self, message):
-        """Process messages"""
-        if message.author.bot:
-            return
-        
-        # Process commands
-        await self.process_commands(message)
-    
-    async def on_command_error(self, ctx, error):
-        """Global error handler"""
+
+    async def on_command_error(self, ctx: commands.Context, error: Exception) -> None:
         if isinstance(error, commands.CommandNotFound):
-            # Don't respond to unknown commands to avoid spam
             return
-        elif isinstance(error, commands.MissingPermissions):
-            embed = discord.Embed(
-                title="❌ Không đủ quyền",
-                description="Bạn không có quyền sử dụng lệnh này!",
-                color=0xFF0000
-            )
-            await ctx.send(embed=embed)
-        elif isinstance(error, commands.CommandOnCooldown):
-            embed = discord.Embed(
-                title="⏰ Cooldown",
-                description=f"Vui lòng đợi {error.retry_after:.1f} giây trước khi sử dụng lệnh này lại!",
-                color=0xFF0000
-            )
-            await ctx.send(embed=embed)
-        else:
-            logger.error(f'Command error: {error}')
-            embed = discord.Embed(
-                title="❌ Lỗi",
-                description="Đã xảy ra lỗi khi thực hiện lệnh!",
-                color=0xFF0000
-            )
-            await ctx.send(embed=embed)
+        if isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send(f"Thiếu nội dung. Dùng `{ctx.prefix}help` để xem cách dùng.")
+            return
+        if isinstance(error, commands.CommandOnCooldown):
+            await ctx.send(f"Vui lòng thử lại sau {error.retry_after:.1f} giây.")
+            return
 
-# Custom help command
-class CustomHelpCommand(commands.HelpCommand):
-    def __init__(self):
-        super().__init__(command_attrs={
-            'help': 'Hiển thị menu trợ giúp',
-            'aliases': ['h']
-        })
-    
-    async def send_bot_help(self, mapping):
-        embed = discord.Embed(
-            title="🤖 GenZ Assistant - Menu Trợ Giúp",
-            description="Bot đa chức năng dành cho GenZ! Dưới đây là các danh mục lệnh:",
-            color=0x7289DA
+        original = getattr(error, "original", error)
+        if isinstance(original, MusicError):
+            await ctx.send(original.message)
+            return
+        logger.error(
+            "prefix_command_failed guild_id=%s user_id=%s command=%s error=%s",
+            getattr(ctx.guild, "id", None),
+            ctx.author.id,
+            ctx.command.qualified_name if ctx.command else None,
+            original,
         )
-        
-        categories = {
-            "🎮 Giải trí": "fun",
-            "🧠 AI & ChatGPT": "ai", 
-            "📅 Lịch & Nhắc nhở": "scheduler",
-            " Mini Games": "games",
-            "🛠️ Quản trị": "admin",
-            "⚙️ Tiện ích": "utils"
-        }
-        
-        for category, cog_name in categories.items():
-            cog = self.context.bot.get_cog(cog_name)
-            if cog:
-                commands_list = [cmd.name for cmd in cog.get_commands()][:5]
-                if commands_list:
-                    embed.add_field(
-                        name=category,
-                        value=f"`{'`, `'.join(commands_list)}`{'...' if len(cog.get_commands()) > 5 else ''}",
-                        inline=True
-                    )
-        
-        embed.add_field(
-            name="📖 Cách sử dụng",
-            value=f"Dùng `{self.context.prefix}help [lệnh]` để xem chi tiết một lệnh cụ thể",
-            inline=False
-        )
-        
-        embed.set_footer(text="GenZ Assistant • Made with ❤️")
-        await self.get_destination().send(embed=embed)
+        await ctx.send("Không thể thực hiện thao tác lúc này. Hãy thử lại sau nhé.")
 
-async def main():
-    """Main function to run the bot"""
-    bot = GenZAssistant()
-    bot.help_command = CustomHelpCommand()
-    
-    # Get token from environment or config
-    token = os.getenv('DISCORD_BOT_TOKEN') or bot.config.get('bot_token')
-    
-    if not token or token == "YOUR_DISCORD_BOT_TOKEN_HERE":
-        logger.error("Discord bot token not found! Please set DISCORD_BOT_TOKEN in .env file or config.json")
-        return
-    
-    try:
-        async with bot:
-            await bot.start(token)
-    except discord.LoginFailure:
-        logger.error("Invalid bot token!")
-    except Exception as e:
-        logger.error(f"Error starting bot: {e}")
+
+async def main() -> None:
+    token = os.getenv("DISCORD_BOT_TOKEN")
+    if not token:
+        raise RuntimeError("DISCORD_BOT_TOKEN is missing from .env")
+
+    async with MusicBot() as bot:
+        await bot.start(token)
+
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        pass

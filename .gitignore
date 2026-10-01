@@ -66,9 +66,7 @@ data/*.db-journal
 config.json
 token.txt
 
-# Test files
-test_*.py
-*_test.py
+# Local demo/scratch files
 *_demo.py
 simple_*.py
 
