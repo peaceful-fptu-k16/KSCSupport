@@ -7,7 +7,7 @@ from typing import Optional
 import aiohttp
 import discord
 
-from branding import BRAND_NAME
+from branding import BRAND_NAME, brand_avatar_bytes, brand_avatar_fingerprint
 
 from .repository import CommunityRepository
 
@@ -56,14 +56,15 @@ class ServerGuideWebhook:
     async def sync_identity(self, guild: discord.Guild) -> bool:
         if not self._webhook:
             return False
-        icon_key = guild.icon.key if guild.icon else "none"
-        signature = f"{self.display_name}:{icon_key}"
+        signature = f"{self.display_name}:mascot:{brand_avatar_fingerprint()}"
         state_key = "server_guide_webhook_identity"
         if await self.repository.get_config(guild.id, state_key) == signature:
             return False
         try:
-            avatar = await guild.icon.read() if guild.icon else None
-            self._webhook = await self._webhook.edit(name=self.display_name, avatar=avatar)
+            self._webhook = await self._webhook.edit(
+                name=self.display_name,
+                avatar=brand_avatar_bytes(),
+            )
             await self.repository.set_config(guild.id, state_key, signature)
             return True
         except discord.HTTPException as error:
@@ -96,7 +97,6 @@ class ServerGuideWebhook:
                 message = await self._webhook.send(
                     embeds=embeds,
                     username=self.display_name,
-                    avatar_url=guild.icon.url if guild.icon else None,
                     allowed_mentions=discord.AllowedMentions.none(),
                     wait=True,
                 )
@@ -145,7 +145,10 @@ class ServerGuideWebhook:
             ),
             color=0xC4B5FD,
         )
-        if guild.icon:
+        bot_avatar = getattr(getattr(guild, "me", None), "display_avatar", None)
+        if bot_avatar:
+            overview.set_thumbnail(url=bot_avatar.url)
+        elif guild.icon:
             overview.set_thumbnail(url=guild.icon.url)
         overview.add_field(name="👥 Thành viên", value=f"**{guild.member_count or len(guild.members):,}**", inline=True)
         overview.add_field(name="📡 Trạng thái", value="**Online**", inline=True)

@@ -5,7 +5,7 @@ from typing import Optional
 import aiohttp
 import discord
 
-from branding import BRAND_NAME
+from branding import BRAND_NAME, brand_avatar_bytes, brand_avatar_fingerprint
 
 from .models import PlaybackSnapshot, TrackSource, format_duration
 from .repository import MusicRepository
@@ -60,15 +60,15 @@ class NowPlayingWebhook:
     async def sync_identity(self, guild: discord.Guild) -> bool:
         if not self._webhook:
             return False
-        icon = getattr(guild, "icon", None)
-        icon_key = icon.key if icon else "none"
-        signature = f"{self.display_name}:{icon_key}"
+        signature = f"{self.display_name}:mascot:{brand_avatar_fingerprint()}"
         state_key = f"now_playing_webhook_identity:{guild.id}"
         if await self.repository.get_state(state_key) == signature:
             return False
         try:
-            avatar = await icon.read() if icon else None
-            self._webhook = await self._webhook.edit(name=self.display_name, avatar=avatar)
+            self._webhook = await self._webhook.edit(
+                name=self.display_name,
+                avatar=brand_avatar_bytes(),
+            )
             await self.repository.set_state(state_key, signature)
             return True
         except discord.HTTPException as error:
@@ -112,7 +112,6 @@ class NowPlayingWebhook:
             message = await self._webhook.send(
                 embed=embed,
                 username=self.display_name,
-                avatar_url=getattr(getattr(guild, "icon", None), "url", None),
                 allowed_mentions=discord.AllowedMentions.none(),
                 wait=True,
             )

@@ -63,10 +63,12 @@ Thumbs.db
 # Bot specific
 data/*.db
 data/*.db-journal
+data/brand-avatar.sha256
 config.json
 token.txt
 
 # Local demo/scratch files
+.codex-preview/
 *_demo.py
 simple_*.py
 

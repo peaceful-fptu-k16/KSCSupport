@@ -12,6 +12,8 @@ from typing import Optional
 import aiohttp
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, ImageOps
 
+from branding import BRAND_MASCOT_PATH
+
 from ..models import PlaybackSnapshot, TrackSource, format_duration
 
 
@@ -35,6 +37,7 @@ class PlayerCardRenderer:
         self.cache_size = cache_size
         self._artwork_cache: OrderedDict[str, bytes] = OrderedDict()
         self._session: Optional[aiohttp.ClientSession] = None
+        self._brand_mascot = self._load_brand_mascot()
 
     async def close(self) -> None:
         if self._session and not self._session.closed:
@@ -83,6 +86,8 @@ class PlayerCardRenderer:
         draw = ImageDraw.Draw(image, "RGBA")
 
         draw.rounded_rectangle((48, 40, 1152, 635), radius=28, fill=PANEL, outline=(255, 255, 255, 28), width=2)
+        self._brand_mark(image, (68, 55), 54)
+        draw = ImageDraw.Draw(image, "RGBA")
         self._draw_header(draw, snapshot, paused, accent)
         if snapshot.current:
             self._draw_active(image, draw, snapshot, artwork, accent)
@@ -111,7 +116,7 @@ class PlayerCardRenderer:
         paused: bool,
         accent: tuple[int, int, int],
     ) -> None:
-        draw.text((80, 72), "KSC MUSIC", font=self._font(24, bold=True), fill=TEXT)
+        draw.text((136, 72), "KSC MUSIC", font=self._font(24, bold=True), fill=TEXT)
         status = "TẠM DỪNG" if paused else ("ĐANG PHÁT" if snapshot.current else "SẴN SÀNG")
         width = draw.textbbox((0, 0), status, font=self._font(18, bold=True))[2] + 38
         x = 1118 - width
@@ -282,6 +287,24 @@ class PlayerCardRenderer:
         except Exception as error:
             logger.info("artwork_decode_failed error=%s", error)
             return None
+
+    @staticmethod
+    def _load_brand_mascot() -> Optional[Image.Image]:
+        try:
+            return Image.open(BRAND_MASCOT_PATH).convert("RGBA")
+        except (OSError, ValueError) as error:
+            logger.warning("player_brand_mascot_load_failed error=%s", error)
+            return None
+
+    def _brand_mark(self, image: Image.Image, position: tuple[int, int], size: int) -> None:
+        if not self._brand_mascot:
+            return
+        mascot = ImageOps.contain(
+            self._brand_mascot,
+            (size, size),
+            method=Image.Resampling.LANCZOS,
+        )
+        image.alpha_composite(mascot, position)
 
     @staticmethod
     def _accent_from_artwork(

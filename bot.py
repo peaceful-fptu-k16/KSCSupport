@@ -8,6 +8,10 @@ from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
 
+
+load_dotenv(".env.local" if os.path.exists(".env.local") else ".env")
+
+from branding import sync_bot_avatar
 from music.errors import MusicError
 
 
@@ -15,8 +19,6 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
-
-load_dotenv(".env.local" if os.path.exists(".env.local") else ".env")
 
 logging.basicConfig(
     level=os.getenv("LOG_LEVEL", "INFO").upper(),
@@ -63,6 +65,7 @@ class MusicBot(commands.Bot):
             case_insensitive=True,
             tree_cls=MusicCommandTree,
         )
+        self._brand_avatar_synced = False
 
     async def setup_hook(self) -> None:
         await self.load_extension("cogs.music")
@@ -81,6 +84,10 @@ class MusicBot(commands.Bot):
             )
 
     async def on_ready(self) -> None:
+        if self.user and not self._brand_avatar_synced:
+            changed = await sync_bot_avatar(self.user)
+            self._brand_avatar_synced = True
+            logger.info("Brand avatar ready changed=%s", changed)
         logger.info("Connected as %s in %s guild(s)", self.user, len(self.guilds))
         await self.change_presence(
             activity=discord.Activity(

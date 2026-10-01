@@ -13,6 +13,8 @@ from typing import Optional
 import aiohttp
 from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps
 
+from branding import BRAND_MASCOT_PATH
+
 
 logger = logging.getLogger(__name__)
 WIDTH = 1200
@@ -35,6 +37,7 @@ class CommunityCardRenderer:
         self.cache_size = cache_size
         self._avatar_cache: OrderedDict[str, bytes] = OrderedDict()
         self._session: Optional[aiohttp.ClientSession] = None
+        self._brand_mascot = self._load_brand_mascot()
 
     async def close(self) -> None:
         if self._session and not self._session.closed:
@@ -501,7 +504,9 @@ class CommunityCardRenderer:
         base = Image.alpha_composite(base, shadow)
         draw = ImageDraw.Draw(base, "RGBA")
         draw.rounded_rectangle((50, 40, 1150, 630), radius=30, fill=SURFACE, outline=(255, 255, 255, 28), width=2)
-        draw.text((82, 72), brand, font=self._font(19, bold=True), fill=TEXT)
+        self._brand_mark(base, (72, 55), 54)
+        draw = ImageDraw.Draw(base, "RGBA")
+        draw.text((138, 72), brand, font=self._font(19, bold=True), fill=TEXT)
         badge_font = self._font(15, bold=True)
         badge_width = draw.textbbox((0, 0), badge, font=badge_font)[2] + 34
         draw.rounded_rectangle(
@@ -513,6 +518,24 @@ class CommunityCardRenderer:
         draw.text((1135 - badge_width, 76), badge, font=badge_font, fill=TEXT)
         draw.line((82, 125, 1118, 125), fill=(255, 255, 255, 20), width=1)
         return base
+
+    @staticmethod
+    def _load_brand_mascot() -> Optional[Image.Image]:
+        try:
+            return Image.open(BRAND_MASCOT_PATH).convert("RGBA")
+        except (OSError, ValueError) as error:
+            logger.warning("community_brand_mascot_load_failed error=%s", error)
+            return None
+
+    def _brand_mark(self, image: Image.Image, position: tuple[int, int], size: int) -> None:
+        if not self._brand_mascot:
+            return
+        mascot = ImageOps.contain(
+            self._brand_mascot,
+            (size, size),
+            method=Image.Resampling.LANCZOS,
+        )
+        image.alpha_composite(mascot, position)
 
     def _avatar(
         self,
