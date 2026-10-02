@@ -6,7 +6,7 @@ import math
 import random
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -72,7 +72,64 @@ def build_avatar() -> None:
     avatar.save(ASSETS / "ksc-mascot-avatar.png", optimize=True)
 
 
+def build_animated_readme_hero() -> None:
+    source = Image.open(ASSETS / "readme-hero.png").convert("RGB")
+    width = 1280
+    height = round(source.height * width / source.width)
+    source = source.resize((width, height), Image.Resampling.LANCZOS)
+    rng = random.Random(925)
+    sparkles = [
+        (rng.randint(40, width - 40), rng.randint(30, height - 30), rng.randint(2, 5), rng.random() * math.tau)
+        for _ in range(14)
+    ]
+
+    frames: list[Image.Image] = []
+    frame_count = 10
+    for index in range(frame_count):
+        phase = index / frame_count * math.tau
+        frame = ImageEnhance.Brightness(source).enhance(1.0 + math.sin(phase) * 0.018).convert("RGBA")
+        effects = Image.new("RGBA", frame.size, (0, 0, 0, 0))
+        draw = ImageDraw.Draw(effects, "RGBA")
+
+        sweep_x = round(-350 + (width + 700) * index / (frame_count - 1))
+        draw.polygon(
+            [
+                (sweep_x - 150, 0),
+                (sweep_x + 10, 0),
+                (sweep_x + 300, height),
+                (sweep_x + 140, height),
+            ],
+            fill=(255, 255, 255, 24),
+        )
+        effects = effects.filter(ImageFilter.GaussianBlur(24))
+        frame = Image.alpha_composite(frame, effects)
+
+        draw = ImageDraw.Draw(frame, "RGBA")
+        for x, y, radius, offset in sparkles:
+            alpha = int(35 + 150 * (math.sin(phase + offset) + 1) / 2)
+            color = (122, 246, 235, alpha) if x % 2 else (255, 175, 213, alpha)
+            draw.line((x - radius * 2, y, x + radius * 2, y), fill=color, width=2)
+            draw.line((x, y - radius * 2, x, y + radius * 2), fill=color, width=2)
+        frames.append(frame.convert("RGB"))
+
+    palette = frames[0].quantize(colors=128, method=Image.Quantize.MEDIANCUT)
+    gif_frames = [
+        frame.quantize(palette=palette, dither=Image.Dither.FLOYDSTEINBERG)
+        for frame in frames
+    ]
+    gif_frames[0].save(
+        ASSETS / "readme-hero-animated.gif",
+        save_all=True,
+        append_images=gif_frames[1:],
+        duration=130,
+        loop=0,
+        disposal=2,
+        optimize=True,
+    )
+
+
 if __name__ == "__main__":
     ASSETS.mkdir(parents=True, exist_ok=True)
     build_avatar()
     build_animated_mascot()
+    build_animated_readme_hero()

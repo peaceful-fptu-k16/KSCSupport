@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/assets/readme-hero.png" width="100%" alt="KSC Gaming pastel gradient banner with mascot" />
+  <img src="docs/assets/readme-hero-animated.gif" width="100%" alt="Animated KSC Gaming pastel gradient banner with mascot" />
 
   <p>
     <strong>Discord-native music player · AI DJ · living community system</strong><br />
@@ -95,48 +95,33 @@
 
 ## 🎧 Music System
 
-### 🎛️ Player giữ kênh chat sạch
+<p align="center">
+  <img src="docs/assets/readme-music-system.png" width="100%" alt="KSC Gaming music system visual pipeline" />
+</p>
+
+<details>
+<summary><strong>🎛️ Mở chi tiết Player, Radio, AI DJ và Audio Lab</strong></summary>
+
+### Player giữ kênh chat sạch
 
 - Tin nhắn gọi nhạc được xóa sau khi xử lý.
-- Chỉ duy trì một Player công khai và cập nhật ngay trên message hiện có.
-- Now Playing webhook tự trở lại cuối kênh khi hội thoại tiếp tục.
-- Thumbnail, waveform, progress, volume, loop, queue và audio profile nằm trong cùng UI.
-- YouTube được pipe thẳng từ `yt-dlp` sang FFmpeg để hạn chế URL CDN hết hạn và HTTP 403.
-
-```text
-REQUEST
-   │
-   ├── YouTube / SoundCloud / Playlist
-   │
-   ▼
-DISCOVERY ──► METADATA ──► FAIR QUEUE ──► AUDIO PIPELINE
-   │                                          │
-   └── Radio / AI DJ                          ├── Realtime EQ
-                                              └── FFmpeg effects
-```
-
-### 📻 Radio và AI DJ
+- Một Player công khai được cập nhật tại chỗ; webhook tự trở lại cuối kênh khi cần.
+- Thumbnail, waveform, progress, volume, loop, queue và audio profile cùng một UI.
+- YouTube được pipe thẳng từ `yt-dlp` sang FFmpeg.
 
 | | 📻 **Radio** | ✨ **AI DJ** |
 |---|---|---|
-| Câu hỏi | “V-Pop hiện có gì hot?” | “Trong nhạc Việt đang hot, đâu là đúng gu tôi?” |
-| Điều khiển | Bot tự chọn hoàn toàn | Chọn genre, vibe, độ trend và độ mới |
-| Nguồn | Nhạc Việt, Official MV | Cùng kho Official MV đã kiểm duyệt |
-| Độ dài | 12 bài và tiếp tục tự động | Mix 18 bài |
-| Chống lặp | URL gần đây và nghệ sĩ trong 5 lượt | Loại trùng trong mỗi mix |
+| Mục tiêu | Xu hướng V-Pop chung | Xu hướng kết hợp gu cá nhân |
+| Điều khiển | Bot tự chọn | Genre, vibe, trend và độ mới |
+| Kết quả | 12 bài, tiếp tục tự động | Mix 18 bài |
+| Chống lặp | URL và nghệ sĩ gần đây | Loại trùng trong mix |
 
-**5 Radio**
+**Radio:** `Trending` · `Nhạc Việt Mới` · `Đang Tăng Nhanh` · `Triệu View` · `V-Pop Hits`
 
-`V-Pop Trending` · `Nhạc Việt Mới` · `Đang Tăng Nhanh` · `Triệu View` · `V-Pop Hits`
+**AI DJ:** `Chill` · `Love` · `Năng lượng` · `Rap Việt` · `Drill` · `Hoodtrap` ·
+`Trap` · `Rage` · `Melodic Rap` · `Hip-Hop / R&B` và nhiều preset khác.
 
-**16 AI DJ presets**
-
-`Trending` · `Nhạc mới` · `Hit lớn` · `Chill` · `Love` · `Tâm trạng` · `Năng lượng` ·
-`Rap Việt` · `Drill` · `Hoodtrap` · `Jerk Drill` · `Sexy Drill` · `Trap` · `Rage` ·
-`Melodic Rap` · `Hip-Hop / R&B`
-
-<details>
-<summary><strong>Official MV policy</strong></summary>
+### Official MV policy
 
 Bot ưu tiên nghệ sĩ và label chính thức, lượt xem cao, bài mới và tín hiệu tăng trưởng thực.
 Các định dạng sau bị loại khỏi Radio và AI DJ:
@@ -149,10 +134,6 @@ Các định dạng sau bị loại khỏi Radio và AI DJ:
 
 Tăng trưởng 7 ngày được tính từ snapshot lượt xem đã quan sát, không tạo số liệu giả.
 
-</details>
-
-### 🎚️ Audio và thư viện
-
 | 🎚️ **Audio Lab** | 💿 **Music Library** |
 |---|---|
 | Equalizer realtime không ngắt bài | Favorites và playlist cá nhân |
@@ -160,20 +141,16 @@ Tăng trưởng 7 ngày được tính từ snapshot lượt xem đã quan sát,
 | Nightcore, Vaporwave, Slow + Reverb | Lyrics có phân trang |
 | Khôi phục đúng vị trí sau khi đổi effect | Music Profile và yearly Wrapped |
 
+</details>
+
 ## 🎉 Community System
 
-<table>
-  <tr>
-    <td width="50%" valign="top">
-      <h3>👤 Member Journey</h3>
-      Welcome Card → Introduction → Activity Profile → Achievement → Birthday → Weekly Recap
-    </td>
-    <td width="50%" valign="top">
-      <h3>⚙️ Admin Journey</h3>
-      Control Center → Channel Mapping → Privacy → Analytics → Member Log → Event Insights
-    </td>
-  </tr>
-</table>
+<p align="center">
+  <img src="docs/assets/readme-community-system.png" width="100%" alt="KSC Gaming member and admin community journeys" />
+</p>
+
+<details>
+<summary><strong>🎉 Mở chi tiết Community automation</strong></summary>
 
 - Theo dõi ngày gắn bó, tin nhắn và thời gian voice bằng batch scan nhẹ.
 - Tự mở khóa 30 achievement và tự ghim 5 huy hiệu nổi bật lên Profile Card.
@@ -182,6 +159,8 @@ Tăng trưởng 7 ngày được tính từ snapshot lượt xem đã quan sát,
 - Weekly Recap, Birthday và Analytics đều có cơ chế chống đăng trùng.
 - Heatmap, peak time, member funnel, growth, retention và Discord Event Analytics.
 - Bật/tắt tính năng, chọn kênh và privacy ngay trong `#bot-config`.
+
+</details>
 
 ## 🎮 Command Deck
 
