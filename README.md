@@ -1,13 +1,9 @@
 <div align="center">
-  <img src="docs/assets/ksc-mascot-animated.png" width="240" alt="KSC Gaming animated mascot" />
-
-  <h1>KSC Gaming</h1>
-
-  <p><strong>A Discord-native music player and living community system.</strong></p>
+  <img src="docs/assets/readme-hero.png" width="100%" alt="KSC Gaming pastel gradient banner with mascot" />
 
   <p>
-    Phát nhạc Việt đúng gu. Ghi nhận từng khoảnh khắc cộng đồng.<br />
-    Mọi trải nghiệm diễn ra trực tiếp trong Discord, với một nhận diện thống nhất.
+    <strong>Discord-native music player · AI DJ · living community system</strong><br />
+    Phát nhạc Việt đúng gu, ghi nhận từng khoảnh khắc cộng đồng.
   </p>
 
   <p>
@@ -31,24 +27,30 @@
 
 ---
 
-## ✦ Tổng quan
+## ✨ Tổng quan
+
+<p align="center">
+  <img src="https://img.shields.io/badge/39-SLASH_COMMANDS-7DD3FC?style=for-the-badge&labelColor=172033" alt="39 slash commands" />
+  <img src="https://img.shields.io/badge/30-ACHIEVEMENTS-F9A8D4?style=for-the-badge&labelColor=172033" alt="30 achievements" />
+  <img src="https://img.shields.io/badge/5-V--POP_RADIOS-6EE7B7?style=for-the-badge&labelColor=172033" alt="5 V-Pop radios" />
+  <img src="https://img.shields.io/badge/16-AI_DJ_PRESETS-C4B5FD?style=for-the-badge&labelColor=172033" alt="16 AI DJ presets" />
+</p>
 
 <table>
   <tr>
-    <td width="25%" align="center"><strong>39</strong><br /><sub>SLASH COMMANDS</sub></td>
-    <td width="25%" align="center"><strong>30</strong><br /><sub>ACHIEVEMENTS</sub></td>
-    <td width="25%" align="center"><strong>5</strong><br /><sub>V-POP RADIOS</sub></td>
-    <td width="25%" align="center"><strong>16</strong><br /><sub>AI DJ PRESETS</sub></td>
+    <td width="18%" align="center">
+      <img src="docs/assets/ksc-mascot-animated.png" width="135" alt="Animated KSC mascot sticker" />
+    </td>
+    <td width="82%" valign="middle">
+      <strong>KSC Gaming không phải tập hợp những command rời rạc.</strong><br /><br />
+      Bot được xây như một sản phẩm Discord hoàn chỉnh: player cố định, UI tương tác,
+      dữ liệu bền vững, automation cộng đồng và một hệ thống đồ họa dùng chung mascot KSC.<br /><br />
+      <strong>Ít rác trong chat · Ít thao tác thủ công · Nhiều tín hiệu hữu ích</strong>
+    </td>
   </tr>
 </table>
 
-KSC Gaming không phải tập hợp những command rời rạc. Bot được xây như một sản phẩm
-Discord hoàn chỉnh: player cố định, UI tương tác, dữ liệu bền vững, tác vụ cộng đồng tự động
-và hệ thống đồ họa dùng chung mascot KSC.
-
-> **Ít rác trong chat, ít thao tác thủ công, nhiều tín hiệu hữu ích.**
-
-## ✦ Trải nghiệm
+## 🌈 Trải nghiệm
 
 <table>
   <tr>
@@ -78,28 +80,22 @@ và hệ thống đồ họa dùng chung mascot KSC.
   <sub>Dark glass · pastel accents · mascot KSC · card 1200 × 675 · tối đa 5 huy hiệu nổi bật</sub>
 </p>
 
-## ✦ Ba lớp sản phẩm
+## 🧩 Hệ sinh thái
 
-<table>
-  <tr>
-    <td width="33%" valign="top">
-      <h3>Music</h3>
-      YouTube, SoundCloud, playlist, tìm kiếm, queue, lyrics, library, audio effects và player Components V2.
-    </td>
-    <td width="33%" valign="top">
-      <h3>Community</h3>
-      Welcome, profile, birthday, achievement, celebrations, events và weekly recap hoàn toàn tự động.
-    </td>
-    <td width="33%" valign="top">
-      <h3>Operations</h3>
-      Analytics, Control Center, member log, webhook cố định, privacy controls và SQLite bền vững.
-    </td>
-  </tr>
-</table>
+<p align="center">
+  <img src="docs/assets/readme-features.png" width="100%" alt="KSC Gaming Music, Radio and AI DJ, Community, Analytics feature cards" />
+</p>
 
-## ✦ Music System
+<p align="center">
+  <img src="https://img.shields.io/badge/PLAYER-Components_V2-7DD3FC?style=flat-square" alt="Components V2 player" />
+  <img src="https://img.shields.io/badge/DISCOVERY-Official_MV-F9A8D4?style=flat-square" alt="Official MV discovery" />
+  <img src="https://img.shields.io/badge/COMMUNITY-Automated-6EE7B7?style=flat-square" alt="Automated community" />
+  <img src="https://img.shields.io/badge/DATA-Local_SQLite-C4B5FD?style=flat-square" alt="Local SQLite data" />
+</p>
 
-### Player giữ kênh chat sạch
+## 🎧 Music System
+
+### 🎛️ Player giữ kênh chat sạch
 
 - Tin nhắn gọi nhạc được xóa sau khi xử lý.
 - Chỉ duy trì một Player công khai và cập nhật ngay trên message hiện có.
@@ -119,9 +115,9 @@ DISCOVERY ──► METADATA ──► FAIR QUEUE ──► AUDIO PIPELINE
                                               └── FFmpeg effects
 ```
 
-### Radio và AI DJ
+### 📻 Radio và AI DJ
 
-| | **Radio** | **AI DJ** |
+| | 📻 **Radio** | ✨ **AI DJ** |
 |---|---|---|
 | Câu hỏi | “V-Pop hiện có gì hot?” | “Trong nhạc Việt đang hot, đâu là đúng gu tôi?” |
 | Điều khiển | Bot tự chọn hoàn toàn | Chọn genre, vibe, độ trend và độ mới |
@@ -155,25 +151,25 @@ Tăng trưởng 7 ngày được tính từ snapshot lượt xem đã quan sát,
 
 </details>
 
-### Audio và thư viện
+### 🎚️ Audio và thư viện
 
-| Audio Lab | Music Library |
+| 🎚️ **Audio Lab** | 💿 **Music Library** |
 |---|---|
 | Equalizer realtime không ngắt bài | Favorites và playlist cá nhân |
 | Bass Boost, 8D, Reverb | Lịch sử và thống kê nghe nhạc |
 | Nightcore, Vaporwave, Slow + Reverb | Lyrics có phân trang |
 | Khôi phục đúng vị trí sau khi đổi effect | Music Profile và yearly Wrapped |
 
-## ✦ Community System
+## 🎉 Community System
 
 <table>
   <tr>
     <td width="50%" valign="top">
-      <h3>Member Journey</h3>
+      <h3>👤 Member Journey</h3>
       Welcome Card → Introduction → Activity Profile → Achievement → Birthday → Weekly Recap
     </td>
     <td width="50%" valign="top">
-      <h3>Admin Journey</h3>
+      <h3>⚙️ Admin Journey</h3>
       Control Center → Channel Mapping → Privacy → Analytics → Member Log → Event Insights
     </td>
   </tr>
@@ -187,7 +183,7 @@ Tăng trưởng 7 ngày được tính từ snapshot lượt xem đã quan sát,
 - Heatmap, peak time, member funnel, growth, retention và Discord Event Analytics.
 - Bật/tắt tính năng, chọn kênh và privacy ngay trong `#bot-config`.
 
-## ✦ Command Deck
+## 🎮 Command Deck
 
 Mọi command đều có slash form. Các thao tác gọi nhạc phù hợp vẫn hỗ trợ prefix `!`.
 
@@ -239,7 +235,7 @@ Mọi command đều có slash form. Các thao tác gọi nhạc phù hợp vẫ
 
 </details>
 
-## ✦ Khởi động
+## 🚀 Khởi động
 
 ### Yêu cầu
 
@@ -278,7 +274,7 @@ Khi sẵn sàng, log hiển thị `Connected as ...` và số slash command đã
 Đặt `DISCORD_GUILD_ID` để command xuất hiện gần như ngay lập tức tại server chính;
 bot sẽ xóa bản global cũ nhằm tránh command trùng.
 
-## ✦ Configuration
+## 🎨 Configuration
 
 Sao chép `.env.example` thành `.env`. Không commit token, cookie hoặc webhook URL.
 
@@ -321,7 +317,7 @@ Webhook giữ một message duy nhất và tự đưa message xuống cuối khi
 
 </details>
 
-## ✦ Discord Layout
+## 🗂️ Discord Layout
 
 Bot tự nhận diện tên kênh ngay cả khi có emoji đứng trước.
 
@@ -349,7 +345,7 @@ STAFF
 | `member-log` | Join, leave và thay đổi thành viên phù hợp privacy. |
 | `bot-config` | Control Center dành cho quản trị viên. |
 
-## ✦ Architecture
+## 🏗️ Architecture
 
 ```text
 Discord Gateway
@@ -399,7 +395,7 @@ Mỗi server sở hữu một `GuildPlayerSession`. `generation` token ngăn aud
 sau `stop` hoặc disconnect. Equalizer chạy trực tiếp trên PCM; effect thay đổi tempo hoặc
 không gian sẽ nối lại bằng FFmpeg tại đúng vị trí đang nghe.
 
-## ✦ Privacy & Quality
+## 🛡️ Privacy & Quality
 
 | Privacy | Quality gate |
 |---|---|
@@ -413,7 +409,7 @@ không gian sẽ nối lại bằng FFmpeg tại đúng vị trí đang nghe.
 python -m unittest discover -s tests -v
 ```
 
-## ✦ Troubleshooting
+## 🧰 Troubleshooting
 
 <details>
 <summary><strong>Slash command chưa xuất hiện</strong></summary>
