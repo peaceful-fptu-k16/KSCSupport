@@ -63,8 +63,9 @@ async def _discover_tracks(
     tracks = await repository.enrich_discovery_metrics(tracks)
     ranked = rank_discovery_tracks(tracks, preset, limit=limit, artist_gap=4)
     if not ranked:
+        source_label = "nhạc Urban Việt phù hợp" if preset.source_policy == "urban" else "Official MV phù hợp"
         raise MusicError(
-            "Không tìm thấy đủ Official MV phù hợp. Hãy thử preset khác.",
+            f"Không tìm thấy đủ {source_label}. Hãy thử preset khác.",
             code="discovery_empty",
         )
     return ranked
@@ -97,7 +98,15 @@ class PresetSelect(discord.ui.Select):
                 label=preset.label,
                 value=key,
                 emoji=preset.emoji,
-                description=("Radio V-Pop" if parent.mode == "radio" else "Official MV · Trend / Popular"),
+                description=(
+                    "Radio V-Pop"
+                    if parent.mode == "radio"
+                    else (
+                        "Artist / Producer · Trend / Popular"
+                        if preset.source_policy == "urban"
+                        else "Official MV · Trend / Popular"
+                    )
+                ),
             )
             for key, preset in presets.items()
         ]
@@ -189,16 +198,25 @@ class DiscoveryView(discord.ui.View):
         description = (
             "Xu hướng V-Pop chung · Official MV · tự chống lặp nghệ sĩ."
             if self.mode == "radio"
-            else "Trong kho nhạc Việt đang hot, chọn đúng genre và vibe của bạn."
+            else "Trong kho nhạc Việt đang hot, chọn đúng genre và vibe của bạn. Urban không bị ép Official MV."
         )
         embed = discord.Embed(title=title, description=description, color=preset.color)
         embed.add_field(name="Preset", value=f"{preset.emoji} **{preset.label}**", inline=True)
         embed.add_field(
             name="Nguồn",
-            value="🇻🇳 Việt Nam · 🎬 Official MV",
+            value=(
+                "🇻🇳 Việt Nam · 🎤 Artist / Producer / Label"
+                if preset.source_policy == "urban"
+                else "🇻🇳 Việt Nam · 🎬 Official MV"
+            ),
             inline=True,
         )
-        embed.add_field(name="Bộ lọc", value="Không lyrics · cover · reupload · unofficial remix", inline=False)
+        filter_text = (
+            "Không cover · reupload · fanmade · sped-up/slowed · bản kéo dài"
+            if preset.source_policy == "urban"
+            else "Không lyrics · cover · reupload · unofficial remix"
+        )
+        embed.add_field(name="Bộ lọc", value=filter_text, inline=False)
         if self.preview_tracks:
             lines = []
             for index, track in enumerate(self.preview_tracks[:10], 1):

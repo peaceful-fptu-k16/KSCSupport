@@ -782,6 +782,7 @@ def analytics_embed(snapshot: AnalyticsSnapshot, guild: discord.Guild, page: str
         title=titles.get(page, titles["overview"]),
         description=f"`{snapshot.start_day}` → `{snapshot.end_day}` · **{snapshot.days} ngày**",
         color=0x7DD3FC,
+        timestamp=discord.utils.utcnow(),
     )
     embed.set_image(url="attachment://analytics.png")
     if page == "overview":
@@ -791,6 +792,18 @@ def analytics_embed(snapshot: AnalyticsSnapshot, guild: discord.Guild, page: str
         embed.add_field(name="🔥 Active", value=f"**{snapshot.active_members:,}**\n{_change(snapshot.active_members, snapshot.previous_active_members)}", inline=True)
         embed.add_field(name="🏅 Thành tựu", value=f"**{snapshot.achievements:,}** mở khóa", inline=True)
         embed.add_field(name="📈 Tăng trưởng ròng", value=f"**{snapshot.new_members - snapshot.left_members:+,}**", inline=True)
+        today = snapshot.daily[-1] if snapshot.daily else None
+        embed.add_field(
+            name="🟢 Hôm nay",
+            value=(
+                f"**{today.messages:,}** tin nhắn · "
+                f"**{today.voice_seconds / 3600:,.1f}h** voice · "
+                f"**{today.active_members:,}** active"
+                if today
+                else "Chưa ghi nhận hoạt động."
+            ),
+            inline=False,
+        )
     elif page == "members":
         embed.add_field(name="Tổng thành viên", value=f"**{snapshot.total_members:,}**", inline=True)
         embed.add_field(name="Tham gia", value=f"**+{snapshot.new_members:,}**", inline=True)
@@ -865,7 +878,7 @@ def analytics_embed(snapshot: AnalyticsSnapshot, guild: discord.Guild, page: str
             ),
             inline=False,
         )
-    embed.set_footer(text=f"{BRAND_NAME} · Analytics tự động cập nhật mỗi ngày")
+    embed.set_footer(text=f"{BRAND_NAME} · Tự động cập nhật mỗi 15 phút · Asia/Saigon")
     return embed
 
 

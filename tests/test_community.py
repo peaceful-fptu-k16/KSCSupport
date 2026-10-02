@@ -208,6 +208,8 @@ class CommunityRepositoryTests(unittest.IsolatedAsyncioTestCase):
         events = analytics_embed(snapshot, None, "events")
         self.assertIn("TỔNG QUAN", embed.title)
         self.assertEqual(embed.image.url, "attachment://analytics.png")
+        self.assertTrue(any("Hôm nay" in field.name for field in embed.fields))
+        self.assertIn("15 phút", embed.footer.text)
         self.assertIn("Peak time", [field.name for field in activity.fields])
         self.assertIn("TĂNG TRƯỞNG", growth.title)
         self.assertIn("EVENT", events.title)

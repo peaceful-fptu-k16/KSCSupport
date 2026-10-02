@@ -487,7 +487,7 @@ class CommunityCardRenderer:
             draw.rounded_rectangle((830, y, 1118, y + 58), radius=15, fill=GLASS, outline=(*color, 75))
             draw.text((850, y + 12), label, font=self._font(13, bold=True), fill=MUTED)
             draw.text((1096, y + 10), value, anchor="ra", font=self._font(23, bold=True), fill=TEXT)
-        draw.text((830, 574), "UPDATED DAILY · KSC GAMING", font=self._font(13, bold=True), fill=MUTED)
+        draw.text((830, 574), "15 MIN SNAPSHOT · KSC GAMING", font=self._font(13, bold=True), fill=MUTED)
         return self._png(image)
 
     def _draw_weekly(self, snapshot, server_name: str) -> bytes:

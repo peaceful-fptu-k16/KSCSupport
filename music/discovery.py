@@ -17,6 +17,7 @@ class DiscoveryPreset:
     freshness: str = "balanced"
     trend: str = "high"
     min_views: int = 0
+    source_policy: str = "official"
 
 
 RADIO_PRESETS = {
@@ -46,15 +47,15 @@ AI_PRESETS = {
     "love": DiscoveryPreset("love", "Love", "💕", "V-Pop tình yêu Official MV", 0xF9A8D4),
     "sad": DiscoveryPreset("sad", "Tâm trạng", "💔", "V-Pop buồn tâm trạng Official MV", 0xA78BFA),
     "energy": DiscoveryPreset("energy", "Năng lượng", "⚡", "V-Pop năng lượng Official MV", 0xFDE68A),
-    "rap": DiscoveryPreset("rap", "Rap Việt", "🔥", "Rap Việt hot Official MV", 0xF97316),
-    "drill": DiscoveryPreset("drill", "Drill", "🖤", "Rap Việt drill Official MV", 0x94A3B8),
-    "hoodtrap": DiscoveryPreset("hoodtrap", "Hoodtrap", "🏙️", "Rap Việt hoodtrap Official MV", 0x7DD3FC),
-    "jerk_drill": DiscoveryPreset("jerk_drill", "Jerk Drill", "⚡", "Rap Việt jerk drill Official MV", 0xFDE68A),
-    "sexy_drill": DiscoveryPreset("sexy_drill", "Sexy Drill", "💜", "Rap Việt sexy drill Official MV", 0xC4B5FD),
-    "trap": DiscoveryPreset("trap", "Trap", "🔊", "Rap Việt trap Official MV", 0xF97316),
-    "rage": DiscoveryPreset("rage", "Rage", "🧨", "Rap Việt rage Official MV", 0xEF4444),
-    "melodic_rap": DiscoveryPreset("melodic_rap", "Melodic Rap", "🌃", "Rap Việt melodic rap Official MV", 0x7DD3FC),
-    "rnb": DiscoveryPreset("rnb", "Hip-Hop / R&B", "🎧", "Việt Nam hip hop R&B Official MV", 0x6EE7B7),
+    "rap": DiscoveryPreset("rap", "Rap Việt", "🔥", "Rap Việt hot trending", 0xF97316, source_policy="urban"),
+    "drill": DiscoveryPreset("drill", "Drill", "🖤", "Rap Việt drill remix hot", 0x94A3B8, source_policy="urban"),
+    "hoodtrap": DiscoveryPreset("hoodtrap", "Hoodtrap", "🏙️", "Rap Việt hoodtrap remix hot", 0x7DD3FC, source_policy="urban"),
+    "jerk_drill": DiscoveryPreset("jerk_drill", "Jerk Drill", "⚡", "Rap Việt jerk drill remix", 0xFDE68A, source_policy="urban"),
+    "sexy_drill": DiscoveryPreset("sexy_drill", "Sexy Drill", "💜", "Rap Việt sexy drill remix", 0xC4B5FD, source_policy="urban"),
+    "trap": DiscoveryPreset("trap", "Trap", "🔊", "Rap Việt trap remix hot", 0xF97316, source_policy="urban"),
+    "rage": DiscoveryPreset("rage", "Rage", "🧨", "Rap Việt rage remix hot", 0xEF4444, source_policy="urban"),
+    "melodic_rap": DiscoveryPreset("melodic_rap", "Melodic Rap", "🌃", "Rap Việt melodic rap hot", 0x7DD3FC, source_policy="urban"),
+    "rnb": DiscoveryPreset("rnb", "Hip-Hop / R&B", "🎧", "Việt Nam hip hop R&B hot", 0x6EE7B7, source_policy="urban"),
 }
 
 
@@ -64,6 +65,12 @@ REJECT_PATTERN = re.compile(
     r"\b(lyrics?|lyric video|lời bài hát|karaoke|cover|re-?upload|fan\s?made|"
     r"sped\s?up|speed\s?up|slowed(?:\s*\+\s*reverb)?|nightcore|vietsub|"
     r"unofficial|official audio|audio official|visualizer|dance practice|live performance)\b",
+    re.IGNORECASE,
+)
+URBAN_REJECT_PATTERN = re.compile(
+    r"\b(karaoke|cover|re-?upload|fan\s?made|sped\s?up|speed\s?up|"
+    r"slowed(?:\s*\+\s*reverb)?|nightcore|vietsub|unofficial|"
+    r"dance practice|live performance|full album|mixtape)\b",
     re.IGNORECASE,
 )
 OFFICIAL_MV_PATTERN = re.compile(
@@ -122,6 +129,25 @@ def is_discovery_candidate(track: Track) -> bool:
     )
 
 
+def is_urban_candidate(track: Track) -> bool:
+    """Accept short-form Vietnamese urban releases without requiring an MV label."""
+    if track.source is not TrackSource.YOUTUBE:
+        return False
+    text = f"{track.title} {track.uploader or ''}"
+    return bool(
+        is_vietnamese_track(track)
+        and not URBAN_REJECT_PATTERN.search(text)
+        and track.duration is not None
+        and MIN_SONG_SECONDS <= track.duration <= MAX_SONG_SECONDS
+    )
+
+
+def matches_preset_policy(track: Track, preset: DiscoveryPreset) -> bool:
+    if preset.source_policy == "urban":
+        return is_urban_candidate(track)
+    return is_discovery_candidate(track)
+
+
 def _age_days(track: Track, *, today: Optional[date] = None) -> Optional[int]:
     if not track.upload_date:
         return None
@@ -166,11 +192,14 @@ def rank_discovery_tracks(
 ) -> list[Track]:
     unique: dict[str, Track] = {}
     for track in tracks:
-        if not is_discovery_candidate(track):
+        if not matches_preset_policy(track, preset):
             continue
         if preset.min_views and (track.view_count or 0) < preset.min_views:
             continue
-        unique.setdefault(track.url, replace(track, is_official=True))
+        unique.setdefault(
+            track.url,
+            replace(track, is_official=preset.source_policy == "official"),
+        )
 
     candidates = list(unique.values())
     ranked_with_positions = sorted(
@@ -203,6 +232,12 @@ def rank_discovery_tracks(
 
 def discovery_queries(preset: DiscoveryPreset) -> list[str]:
     year = datetime.now(timezone.utc).year
+    if preset.source_policy == "urban":
+        return [
+            f"{preset.query} {year}",
+            f"{preset.query} nghệ sĩ producer Việt Nam",
+            f"{preset.query} audio visualizer music video",
+        ]
     return [
         f"{preset.query} {year}",
         f"{preset.query} Việt Nam",
@@ -218,6 +253,20 @@ def custom_ai_preset(genre: str, vibe: str, trend: str, freshness: str) -> Disco
     freshness_value = clean(freshness).casefold()
     trend_mode = "rising" if "tăng" in trend_value else ("popular" if "cao" in trend_value else "medium")
     fresh_mode = "new" if "mới" in freshness_value else ("any" if "kinh" in freshness_value else "balanced")
-    query = f"nhạc Việt {genre} {vibe} đang hot Official MV"
+    urban_terms = (
+        "rap", "drill", "hoodtrap", "trap", "rage", "hip-hop", "hip hop", "r&b", "urban"
+    )
+    source_policy = "urban" if any(term in genre.casefold() for term in urban_terms) else "official"
+    source_hint = "" if source_policy == "urban" else " Official MV"
+    query = f"nhạc Việt {genre} {vibe} đang hot{source_hint}"
     label = " / ".join(part for part in (genre, vibe) if part)[:80]
-    return DiscoveryPreset("custom", label, "✨", query, 0xC4B5FD, fresh_mode, trend_mode)
+    return DiscoveryPreset(
+        "custom",
+        label,
+        "✨",
+        query,
+        0xC4B5FD,
+        fresh_mode,
+        trend_mode,
+        source_policy=source_policy,
+    )

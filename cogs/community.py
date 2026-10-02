@@ -57,7 +57,6 @@ class Community(commands.Cog):
         self._guide_bump_tasks: dict[int, asyncio.Task] = {}
         self._voice_seeded = False
         self._achievement_scan_day: str | None = None
-        self._analytics_day: str | None = None
         self._weekly_checked_day: str | None = None
 
     async def cog_load(self) -> None:
@@ -715,14 +714,14 @@ class Community(commands.Cog):
                 message_id=message_id,
             )
 
-    async def _publish_analytics(self, guild: discord.Guild) -> None:
+    async def _publish_analytics(self, guild: discord.Guild) -> bool:
         if not await self._feature_enabled(guild.id, "analytics"):
-            return
-        if await self._privacy(guild.id, "analytics", "admin") == "admin":
-            return
+            return False
+        if await self._privacy(guild.id, "analytics", "public") == "admin":
+            return False
         channel = await self._configured_channel(guild, "analytics", "community-analytics")
         if not channel:
-            return
+            return False
         snapshot = await self.repository.analytics_snapshot(guild.id, days=30)
         card = await self.cards.render_analytics(snapshot=snapshot, server_name=BRAND_NAME)
         embed = analytics_embed(snapshot, guild)
@@ -732,11 +731,12 @@ class Community(commands.Cog):
             try:
                 message = await channel.fetch_message(int(message_id))
                 await message.edit(embed=embed, attachments=[file])
-                return
+                return True
             except (discord.NotFound, discord.Forbidden, ValueError):
                 pass
         message = await channel.send(embed=embed, file=file)
         await self.repository.set_config(guild.id, "analytics_message_id", str(message.id))
+        return True
 
     @staticmethod
     def _completed_week(today: date) -> tuple[date, date]:
@@ -782,19 +782,20 @@ class Community(commands.Cog):
         await self.repository.set_config(guild.id, "weekly_last_period", period_key)
         await self.repository.set_config(guild.id, "weekly_message_id", str(message.id))
 
-    @tasks.loop(hours=1)
+    @tasks.loop(minutes=15)
     async def analytics_scheduler(self) -> None:
         now = datetime.now(LOCAL_TZ)
-        today = now.date().isoformat()
-        if now.hour < 8 or self._analytics_day == today:
-            return
+        published = 0
         for guild in self.bot.guilds:
             try:
-                await self._publish_analytics(guild)
+                published += int(await self._publish_analytics(guild))
             except Exception:
                 logger.exception("analytics_publish_failed guild_id=%s", guild.id)
-        self._analytics_day = today
-        logger.info("analytics_publish_complete date=%s", today)
+        logger.info(
+            "analytics_publish_complete refreshed_at=%s published=%s",
+            now.isoformat(timespec="minutes"),
+            published,
+        )
 
     @tasks.loop(hours=1)
     async def weekly_scheduler(self) -> None:

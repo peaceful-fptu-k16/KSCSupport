@@ -7,6 +7,7 @@ from music.discovery import (
     custom_ai_preset,
     discovery_score,
     is_discovery_candidate,
+    is_urban_candidate,
     rank_discovery_tracks,
 )
 from music.models import Track, TrackSource
@@ -88,4 +89,29 @@ class DiscoveryPolicyTests(unittest.TestCase):
         self.assertIn("chạy đêm", preset.query)
         self.assertEqual(preset.freshness, "new")
         self.assertEqual(preset.trend, "popular")
+        self.assertEqual(preset.source_policy, "urban")
         self.assertEqual(len(AI_PRESETS), 16)
+
+    def test_urban_policy_accepts_remix_without_official_mv(self) -> None:
+        remix = track("Rap Việt Hoodtrap Remix", "Producer Việt Nam")
+
+        self.assertTrue(is_urban_candidate(remix))
+        ranked = rank_discovery_tracks([remix], AI_PRESETS["hoodtrap"], limit=1)
+        self.assertEqual(ranked, [remix])
+        self.assertFalse(ranked[0].is_official)
+
+    def test_urban_policy_still_rejects_low_quality_formats(self) -> None:
+        for title in (
+            "Rap Việt Hoodtrap Cover",
+            "Rap Việt Hoodtrap Reupload",
+            "Rap Việt Hoodtrap Sped Up",
+            "Rap Việt Hoodtrap Slowed + Reverb",
+            "Rap Việt Hoodtrap Fanmade",
+        ):
+            self.assertFalse(is_urban_candidate(track(title, "Producer Việt Nam")), title)
+
+    def test_non_urban_custom_preset_keeps_official_policy(self) -> None:
+        preset = custom_ai_preset("V-Pop", "chill", "Cao", "Mới")
+
+        self.assertEqual(preset.source_policy, "official")
+        self.assertIn("Official MV", preset.query)
