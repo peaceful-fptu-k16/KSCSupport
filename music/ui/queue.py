@@ -3,7 +3,7 @@ import math
 import discord
 
 from ..errors import MusicError
-from ..models import PlaybackSnapshot, format_duration
+from ..models import format_duration
 from ..player import MusicPlayerManager
 from ..repository import MusicRepository
 from .player import PlayerUI, require_control_voice

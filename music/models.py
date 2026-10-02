@@ -33,6 +33,13 @@ class Track:
     thumbnail: Optional[str] = None
     requester_id: Optional[int] = None
     requester_name: Optional[str] = None
+    view_count: Optional[int] = None
+    upload_date: Optional[str] = None
+    channel_id: Optional[str] = None
+    channel_verified: bool = False
+    is_official: bool = False
+    view_growth_7d: Optional[int] = None
+    discovery_text: Optional[str] = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,6 +52,7 @@ class PlaybackSnapshot:
     audio_profile: AudioProfile = AudioProfile()
     fair_queue: bool = False
     autoplay: bool = False
+    radio_label: Optional[str] = None
 
 
 @dataclass
@@ -63,6 +71,7 @@ class PlaybackState:
     audio_profile: AudioProfile = field(default_factory=AudioProfile)
     fair_queue: bool = False
     autoplay: bool = False
+    radio_label: Optional[str] = None
     last_requester_id: Optional[int] = None
     priority_count: int = 0
 
@@ -165,6 +174,7 @@ class PlaybackState:
             audio_profile=self.audio_profile,
             fair_queue=self.fair_queue,
             autoplay=self.autoplay,
+            radio_label=self.radio_label,
         )
 
 
@@ -174,3 +184,28 @@ def format_duration(seconds: Optional[int]) -> str:
     minutes, second = divmod(int(seconds), 60)
     hours, minute = divmod(minutes, 60)
     return f"{hours}:{minute:02d}:{second:02d}" if hours else f"{minute}:{second:02d}"
+
+
+def shorten_text(value: str, limit: int) -> str:
+    return value if len(value) <= limit else value[: limit - 1] + "…"
+
+
+def format_listening_time(seconds: int) -> str:
+    seconds = max(0, seconds)
+    if seconds < 60:
+        return f"{seconds} giây"
+    hours, remainder = divmod(seconds, 3600)
+    minutes = remainder // 60
+    return f"{hours} giờ {minutes} phút" if hours else f"{minutes} phút"
+
+
+def format_compact_number(value: Optional[int], *, unknown: str = "Chưa rõ") -> str:
+    if value is None:
+        return unknown
+    if value >= 1_000_000_000:
+        return f"{value / 1_000_000_000:.1f}B"
+    if value >= 1_000_000:
+        return f"{value / 1_000_000:.1f}M"
+    if value >= 1_000:
+        return f"{value / 1_000:.0f}K"
+    return str(value)

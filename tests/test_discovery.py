@@ -1,0 +1,91 @@
+import unittest
+from datetime import date
+
+from music.discovery import (
+    AI_PRESETS,
+    RADIO_PRESETS,
+    custom_ai_preset,
+    discovery_score,
+    is_discovery_candidate,
+    rank_discovery_tracks,
+)
+from music.models import Track, TrackSource
+
+
+def track(
+    title: str,
+    uploader: str,
+    *,
+    views: int = 1_000_000,
+    uploaded: str = "2026-09-01",
+) -> Track:
+    return Track(
+        title,
+        f"https://youtube.com/watch?v={title}",
+        TrackSource.YOUTUBE,
+        duration=240,
+        uploader=uploader,
+        view_count=views,
+        upload_date=uploaded,
+        channel_verified=True,
+    )
+
+
+class DiscoveryPolicyTests(unittest.TestCase):
+    def test_official_filter_rejects_unwanted_formats(self) -> None:
+        self.assertTrue(is_discovery_candidate(track("Bài Hát | Official MV", "Artist Official")))
+        for title in (
+            "Bài Hát Lyrics Video",
+            "Bài Hát Cover",
+            "Bài Hát Sped Up",
+            "Bài Hát Slowed + Reverb",
+            "Bài Hát Fanmade",
+            "Bài Hát Remix",
+        ):
+            self.assertFalse(is_discovery_candidate(track(title, "Artist Official")), title)
+
+    def test_verified_chart_channel_is_not_treated_as_official_mv(self) -> None:
+        chart = track(
+            "Most Viewed Vietnamese Music Last Week | Top Vpop Songs",
+            "Bảng Xếp Hạng Âm Nhạc",
+        )
+
+        self.assertFalse(is_discovery_candidate(chart))
+
+    def test_foreign_official_mv_is_not_treated_as_vpop(self) -> None:
+        foreign = track("Dynamite Official MV", "HYBE LABELS")
+
+        self.assertFalse(is_discovery_candidate(foreign))
+
+    def test_radio_ranking_keeps_artist_gap(self) -> None:
+        tracks = [
+            track("A1 Official MV", "Artist A", views=9_000_000),
+            track("A2 Official MV", "Artist A", views=8_000_000),
+            track("B Official MV", "Artist B", views=7_000_000),
+            track("C Official MV", "Artist C", views=6_000_000),
+            track("D Official MV", "Artist D", views=5_000_000),
+            track("E Official MV", "Artist E", views=4_000_000),
+        ]
+
+        ranked = rank_discovery_tracks(tracks, RADIO_PRESETS["trending"], limit=5, artist_gap=3)
+
+        artists = [item.uploader for item in ranked]
+        self.assertNotIn("Artist A", artists[1:4])
+
+    def test_new_music_scores_recent_release_higher(self) -> None:
+        recent = track("New Official MV", "Artist A", views=500_000, uploaded="2026-09-28")
+        old = track("Old Official MV", "Artist B", views=500_000, uploaded="2024-01-01")
+
+        self.assertGreater(
+            discovery_score(recent, RADIO_PRESETS["new"], today=date(2026, 10, 2)),
+            discovery_score(old, RADIO_PRESETS["new"], today=date(2026, 10, 2)),
+        )
+
+    def test_custom_ai_preset_combines_user_preferences(self) -> None:
+        preset = custom_ai_preset("Drill + Hoodtrap", "chạy đêm", "Cao", "Mới")
+
+        self.assertIn("Drill + Hoodtrap", preset.query)
+        self.assertIn("chạy đêm", preset.query)
+        self.assertEqual(preset.freshness, "new")
+        self.assertEqual(preset.trend, "popular")
+        self.assertEqual(len(AI_PRESETS), 16)

@@ -1,57 +1,25 @@
 import asyncio
 import math
-import random
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 import discord
 
+from ..discovery import (
+    AI_PRESETS,
+    RADIO_PRESETS,
+    DiscoveryPreset,
+    custom_ai_preset,
+    discovery_queries,
+    rank_discovery_tracks,
+)
 from ..errors import MusicError, VoiceStateError
-from ..models import Track, TrackSource, format_duration
+from ..models import Track, format_compact_number, format_listening_time
 from ..repository import MusicProfile, MusicRepository
 
 if TYPE_CHECKING:
     from .player import PlayerUI
-
-
-MOODS = {
-    "chill": ("Chill Night", "chill night mix", "🌙", 0xC4B5FD),
-    "party": ("Party", "party hits mix", "🎉", 0xF9A8D4),
-    "gaming": ("Gaming", "gaming music mix", "🎮", 0x6EE7B7),
-    "love": ("Love", "love songs mix", "💕", 0xF9A8D4),
-    "rainy": ("Rainy", "rainy day lofi mix", "🌧️", 0x7DD3FC),
-    "energy": ("Energy", "high energy music mix", "⚡", 0xFDE68A),
-    "sad": ("Sad", "sad songs mix", "💔", 0xA78BFA),
-    "morning": ("Morning", "morning acoustic mix", "☀️", 0xFDBA8C),
-}
-
-VPOP_QUERIES = {
-    "chill": "VPop Việt Nam chill Official MV",
-    "party": "VPop Việt Nam sôi động Official MV",
-    "gaming": "VPop Việt Nam năng lượng Official MV",
-    "love": "VPop Việt Nam tình yêu Official MV",
-    "rainy": "VPop Việt Nam ngày mưa Official MV",
-    "energy": "VPop Việt Nam tích cực Official MV",
-    "sad": "VPop Việt Nam buồn tâm trạng Official MV",
-    "morning": "VPop Việt Nam nhẹ nhàng Official MV",
-}
-
-MIN_SONG_SECONDS = 60
-MAX_SONG_SECONDS = 12 * 60
-
-
-def _is_song_length(track: Track) -> bool:
-    return (
-        track.duration is not None
-        and MIN_SONG_SECONDS <= track.duration <= MAX_SONG_SECONDS
-    )
-
-
-def _listening_time(seconds: int) -> str:
-    hours, remainder = divmod(max(0, seconds), 3600)
-    minutes = remainder // 60
-    return f"{hours} giờ {minutes} phút" if hours else f"{minutes} phút"
 
 
 def _personality(hour: Optional[int]) -> tuple[str, str]:
@@ -71,47 +39,35 @@ async def _discover_tracks(
     repository: MusicRepository,
     guild_id: int,
     user: discord.abc.User,
-    mood: str,
+    preset: DiscoveryPreset,
     *,
     limit: int = 8,
-    vietnamese_only: bool = False,
 ) -> list[Track]:
-    label, query, _emoji, _color = MOODS[mood]
-    if vietnamese_only:
-        queries = [VPOP_QUERIES[mood], f"nhạc Việt {label} Official Music Video"]
-    else:
-        profile = await repository.get_music_profile(guild_id, user.id)
-        queries = [query]
-        if profile.stats.top_artist:
-            queries.insert(0, f"{profile.stats.top_artist} {label} mix")
-
     groups = await asyncio.gather(
         *(
             ui.manager.extractor.search_tracks(
-                item,
+                query,
                 requester_id=user.id,
                 requester_name=user.display_name,
-                limit=5,
+                limit=10,
             )
-            for item in queries
+            for query in discovery_queries(preset)
         ),
         return_exceptions=True,
     )
     tracks: list[Track] = []
-    seen: set[str] = set()
     for group in groups:
         if isinstance(group, Exception):
             continue
-        for track in group:
-            if vietnamese_only and not _is_song_length(track):
-                continue
-            if track.url not in seen:
-                seen.add(track.url)
-                tracks.append(track)
-    if not tracks:
-        raise MusicError("Không tìm được bài phù hợp với mood này.", code="discovery_empty")
-    random.shuffle(tracks)
-    return tracks[:limit]
+        tracks.extend(group)
+    tracks = await repository.enrich_discovery_metrics(tracks)
+    ranked = rank_discovery_tracks(tracks, preset, limit=limit, artist_gap=4)
+    if not ranked:
+        raise MusicError(
+            "Không tìm thấy đủ Official MV phù hợp. Hãy thử preset khác.",
+            code="discovery_empty",
+        )
+    return ranked
 
 
 async def _enqueue_for_interaction(
@@ -133,21 +89,54 @@ async def _enqueue_for_interaction(
     )
 
 
-class MoodSelect(discord.ui.Select):
+class PresetSelect(discord.ui.Select):
     def __init__(self, parent: "DiscoveryView") -> None:
+        presets = RADIO_PRESETS if parent.mode == "radio" else AI_PRESETS
         options = [
-            discord.SelectOption(label=label, value=value, emoji=emoji)
-            for value, (label, _query, emoji, _color) in MOODS.items()
+            discord.SelectOption(
+                label=preset.label,
+                value=key,
+                emoji=preset.emoji,
+                description=("Radio V-Pop" if parent.mode == "radio" else "Official MV · Trend / Popular"),
+            )
+            for key, preset in presets.items()
         ]
-        super().__init__(placeholder="Choose a mood", options=options)
+        super().__init__(placeholder="Chọn Radio" if parent.mode == "radio" else "Chọn genre / vibe", options=options)
         self.parent_view = parent
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        self.parent_view.mood = self.values[0]
+        self.parent_view.preset_key = self.values[0]
+        self.parent_view.custom_preset = None
+        self.parent_view.preview_tracks = []
         self.parent_view.refresh()
         await interaction.response.edit_message(
             embed=self.parent_view.embed(),
             view=self.parent_view,
+        )
+
+
+class AIDJRefineModal(discord.ui.Modal, title="Tinh chỉnh AI DJ"):
+    genre = discord.ui.TextInput(label="Genre", placeholder="Drill + Hoodtrap", max_length=80)
+    vibe = discord.ui.TextInput(label="Vibe", placeholder="Tối, mạnh, chạy đêm", max_length=80, required=False)
+    trend = discord.ui.TextInput(label="Độ trend", placeholder="Cao / Vừa", default="Cao", max_length=20)
+    freshness = discord.ui.TextInput(label="Độ mới", placeholder="Mới / Hỗn hợp / Kinh điển", default="Hỗn hợp", max_length=30)
+
+    def __init__(self, view: "DiscoveryView") -> None:
+        super().__init__()
+        self.discovery_view = view
+
+    async def on_submit(self, interaction: discord.Interaction) -> None:
+        self.discovery_view.custom_preset = custom_ai_preset(
+            self.genre.value,
+            self.vibe.value,
+            self.trend.value,
+            self.freshness.value,
+        )
+        self.discovery_view.preview_tracks = []
+        self.discovery_view.refresh()
+        await interaction.response.edit_message(
+            embed=self.discovery_view.embed(),
+            view=self.discovery_view,
         )
 
 
@@ -160,7 +149,7 @@ class DiscoveryView(discord.ui.View):
         owner_id: int,
         *,
         mode: str = "ai",
-        mood: str = "chill",
+        preset_key: Optional[str] = None,
     ) -> None:
         super().__init__(timeout=300)
         self.ui = ui
@@ -168,10 +157,19 @@ class DiscoveryView(discord.ui.View):
         self.guild_id = guild_id
         self.owner_id = owner_id
         self.mode = mode
-        self.mood = mood
-        self.mood_select = MoodSelect(self)
-        self.add_item(self.mood_select)
+        self.preset_key = preset_key or ("trending" if mode == "radio" else "chill")
+        self.custom_preset: Optional[DiscoveryPreset] = None
+        self.preview_tracks: list[Track] = []
+        self.preset_select = PresetSelect(self)
+        self.add_item(self.preset_select)
         self.refresh()
+
+    @property
+    def preset(self) -> DiscoveryPreset:
+        if self.custom_preset:
+            return self.custom_preset
+        presets = RADIO_PRESETS if self.mode == "radio" else AI_PRESETS
+        return presets[self.preset_key]
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id == self.owner_id:
@@ -180,53 +178,81 @@ class DiscoveryView(discord.ui.View):
         return False
 
     def refresh(self) -> None:
-        label, _query, emoji, _color = MOODS[self.mood]
         self.start.label = "Start Radio" if self.mode == "radio" else "Generate Mix"
         self.start.emoji = "📻" if self.mode == "radio" else "✨"
-        self.mood_select.placeholder = f"{emoji} {label}"
+        self.preset_select.placeholder = f"{self.preset.emoji} {self.preset.label}"
+        self.refine.disabled = self.mode == "radio"
 
     def embed(self) -> discord.Embed:
-        label, _query, emoji, color = MOODS[self.mood]
+        preset = self.preset
         title = "📻 RADIO" if self.mode == "radio" else "🤖✨ AI DJ"
         description = (
-            "Radio sẽ tiếp tục chọn bài cùng mood khi hàng đợi trống."
+            "Xu hướng V-Pop chung · Official MV · tự chống lặp nghệ sĩ."
             if self.mode == "radio"
-            else "V-Pop Official MV theo mood, chỉ chọn video có thời lượng một bài hát."
+            else "Trong kho nhạc Việt đang hot, chọn đúng genre và vibe của bạn."
         )
-        embed = discord.Embed(title=title, description=description, color=color)
-        embed.add_field(name="Mood", value=f"{emoji} **{label}**", inline=True)
+        embed = discord.Embed(title=title, description=description, color=preset.color)
+        embed.add_field(name="Preset", value=f"{preset.emoji} **{preset.label}**", inline=True)
         embed.add_field(
-            name="Mode",
-            value="Continuous" if self.mode == "radio" else "Personalized mix",
+            name="Nguồn",
+            value="🇻🇳 Việt Nam · 🎬 Official MV",
             inline=True,
         )
+        embed.add_field(name="Bộ lọc", value="Không lyrics · cover · reupload · unofficial remix", inline=False)
+        if self.preview_tracks:
+            lines = []
+            for index, track in enumerate(self.preview_tracks[:10], 1):
+                growth = f" · +{format_compact_number(track.view_growth_7d)}/7d" if track.view_growth_7d else ""
+                lines.append(
+                    f"`{index:02d}` **{track.title[:55]}**\n"
+                    f"　{track.uploader or 'Nghệ sĩ'} · 👀 {format_compact_number(track.view_count)}{growth}"
+                )
+            embed.add_field(name=f"Xem trước · {len(self.preview_tracks)} bài", value="\n".join(lines), inline=False)
         return embed
+
+    async def _generate(self, interaction: discord.Interaction) -> list[Track]:
+        return await _discover_tracks(
+            self.ui,
+            self.repository,
+            self.guild_id,
+            interaction.user,
+            self.preset,
+            limit=12 if self.mode == "radio" else 18,
+        )
 
     @discord.ui.button(label="Generate Mix", emoji="✨", style=discord.ButtonStyle.primary, row=1)
     async def start(self, interaction: discord.Interaction, _button: discord.ui.Button) -> None:
         await interaction.response.defer(ephemeral=True, thinking=True)
         try:
-            tracks = await _discover_tracks(
-                self.ui,
-                self.repository,
-                self.guild_id,
-                interaction.user,
-                self.mood,
-                vietnamese_only=self.mode == "ai",
-            )
+            tracks = self.preview_tracks or await self._generate(interaction)
             await _enqueue_for_interaction(self.ui, interaction, tracks)
             if self.mode == "radio":
-                await self.ui.manager.session(self.guild_id).set_autoplay(True)
+                session = self.ui.manager.session(self.guild_id)
+                await session.set_radio_policy(self.preset)
+                await session.set_autoplay(True)
             await self.ui.render(self.guild_id)
         except MusicError as error:
             await interaction.followup.send(error.message, ephemeral=True)
             return
-        label = MOODS[self.mood][0]
         suffix = "Radio đã bật" if self.mode == "radio" else "AI DJ đã tạo phiên nghe"
         await interaction.followup.send(
-            f"{suffix} **{label}** với **{len(tracks)} bài**.",
+            f"{suffix} **{self.preset.label}** với **{len(tracks)} bài**.",
             ephemeral=True,
         )
+
+    @discord.ui.button(label="Preview", emoji="👀", style=discord.ButtonStyle.secondary, row=1)
+    async def preview(self, interaction: discord.Interaction, _button: discord.ui.Button) -> None:
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        try:
+            self.preview_tracks = await self._generate(interaction)
+        except MusicError as error:
+            await interaction.followup.send(error.message, ephemeral=True)
+            return
+        await interaction.edit_original_response(embed=self.embed(), view=self)
+
+    @discord.ui.button(label="Refine", emoji="✨", style=discord.ButtonStyle.secondary, row=1)
+    async def refine(self, interaction: discord.Interaction, _button: discord.ui.Button) -> None:
+        await interaction.response.send_modal(AIDJRefineModal(self))
 
     @discord.ui.button(label="Profile", emoji="👤", style=discord.ButtonStyle.secondary, row=1)
     async def profile(self, interaction: discord.Interaction, _button: discord.ui.Button) -> None:
@@ -268,7 +294,7 @@ def profile_embed(user: discord.abc.User, profile: MusicProfile) -> discord.Embe
     )
     if getattr(user, "display_avatar", None):
         embed.set_thumbnail(url=user.display_avatar.url)
-    embed.add_field(name="Listening", value=_listening_time(stats.listened_seconds), inline=True)
+    embed.add_field(name="Listening", value=format_listening_time(stats.listened_seconds), inline=True)
     embed.add_field(name="Tracks", value=f"{stats.play_count} plays", inline=True)
     embed.add_field(name="Favorites", value=str(stats.favorite_count), inline=True)
     embed.add_field(name="Top Artist", value=stats.top_artist or "Chưa có", inline=True)
@@ -297,7 +323,7 @@ class WrappedView(discord.ui.View):
         personality, caption = _personality(self.profile.peak_hour)
         if self.page == 0:
             title = f"✨ MUSIC WRAPPED {year}"
-            description = f"## {_listening_time(stats.listened_seconds)}\n@{self.user.display_name}"
+            description = f"## {format_listening_time(stats.listened_seconds)}\n@{self.user.display_name}"
         elif self.page == 1:
             title = "👑 ARTIST OF THE YEAR"
             description = f"## {stats.top_artist or 'Chưa có dữ liệu'}"

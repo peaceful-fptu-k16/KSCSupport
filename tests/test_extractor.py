@@ -12,6 +12,10 @@ class ExtractorMetadataTests(unittest.TestCase):
                 "url": "abc123",
                 "title": "Example",
                 "extractor_key": "Youtube",
+                "view_count": 12_800_000,
+                "upload_date": "20260915",
+                "channel_id": "UC123",
+                "channel_is_verified": True,
             },
             requester_id=1,
             requester_name="Tester",
@@ -21,6 +25,10 @@ class ExtractorMetadataTests(unittest.TestCase):
         self.assertEqual(result.url, "https://www.youtube.com/watch?v=abc123")
         self.assertEqual(result.source, TrackSource.YOUTUBE)
         self.assertEqual(result.thumbnail, "https://i.ytimg.com/vi/abc123/hqdefault.jpg")
+        self.assertEqual(result.view_count, 12_800_000)
+        self.assertEqual(result.upload_date, "2026-09-15")
+        self.assertEqual(result.channel_id, "UC123")
+        self.assertTrue(result.channel_verified)
 
     def test_thumbnail_list_is_used_when_primary_thumbnail_is_missing(self) -> None:
         result = MediaExtractor.track_from_info(

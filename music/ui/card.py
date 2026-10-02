@@ -14,7 +14,7 @@ from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, ImageOps
 
 from branding import BRAND_MASCOT_PATH
 
-from ..models import PlaybackSnapshot, TrackSource, format_duration
+from ..models import PlaybackSnapshot, TrackSource, format_compact_number, format_duration
 
 
 logger = logging.getLogger(__name__)
@@ -116,7 +116,8 @@ class PlayerCardRenderer:
         paused: bool,
         accent: tuple[int, int, int],
     ) -> None:
-        draw.text((136, 72), "KSC MUSIC", font=self._font(24, bold=True), fill=TEXT)
+        brand = f"RADIO · {snapshot.radio_label.upper()}" if snapshot.radio_label else "KSC MUSIC"
+        self._draw_fitted(draw, brand, (136, 72), 650, 24, bold=True, fill=TEXT, min_size=17)
         status = "TẠM DỪNG" if paused else ("ĐANG PHÁT" if snapshot.current else "SẴN SÀNG")
         width = draw.textbbox((0, 0), status, font=self._font(18, bold=True))[2] + 38
         x = 1118 - width
@@ -179,11 +180,18 @@ class PlayerCardRenderer:
         )
         draw.text((x, 551), f"{len(snapshot.queue)} bài đang chờ", font=self._font(18), fill=MUTED)
         status = []
+        if track.is_official:
+            status.append("OFFICIAL MV")
+        if track.view_count is not None:
+            status.append(f"{format_compact_number(track.view_count)} VIEWS")
+        if track.view_growth_7d:
+            status.append(f"+{format_compact_number(track.view_growth_7d)} / 7D")
         if snapshot.audio_profile.active:
             status.append(
                 f"FX {snapshot.audio_profile.effect.label}  ·  "
                 f"EQ {snapshot.audio_profile.equalizer.label}"
             )
+
         if snapshot.fair_queue:
             status.append("CÔNG BẰNG")
         if snapshot.autoplay:

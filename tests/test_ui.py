@@ -9,21 +9,11 @@ from music.models import LoopMode, PlaybackSnapshot, Track, TrackSource
 from music.repository import HistoryEntry, ListeningStats, MusicProfile
 from music.ui.audio_settings import AudioSettingsView
 from music.ui.card import PlayerCardRenderer
-from music.ui.discovery import (
-    DiscoveryView,
-    PartyManager,
-    VPOP_QUERIES,
-    WrappedView,
-    _is_song_length,
-)
+from music.ui.discovery import DiscoveryView, PartyManager, WrappedView
 from music.ui.history import HistoryView, stats_embed
-from music.ui.player import PlayerActionButton, PlayerLayoutView, PlayerUI
+from music.ui.player import PlayerActionButton, PlayerLayoutView
 from music.ui.queue import QueueView
 from music.ui.search import SearchResultsView, TrackActionsView
-
-
-class FakeGuild:
-    voice_client = None
 
 
 class FakeUser:
@@ -79,14 +69,16 @@ class PlayerUITests(unittest.IsolatedAsyncioTestCase):
             any(isinstance(item, discord.ui.MediaGallery) for item in view.walk_children())
         )
 
-    async def test_player_embed_contains_track_state(self) -> None:
+    async def test_player_status_contains_track_state(self) -> None:
         track = Track(
             title="Dream Love",
-            url="https://soundcloud.com/example/dream-love",
-            source=TrackSource.SOUNDCLOUD,
+            url="https://youtube.com/watch?v=dream-love",
+            source=TrackSource.YOUTUBE,
             duration=245,
             uploader="Artist",
             requester_name="Duy",
+            view_count=1_200_000,
+            is_official=True,
         )
         snapshot = PlaybackSnapshot(
             current=track,
@@ -95,11 +87,13 @@ class PlayerUITests(unittest.IsolatedAsyncioTestCase):
             loop_mode=LoopMode.TRACK,
         )
 
-        embed = PlayerUI._build_embed(FakeGuild(), snapshot, paused=False)
+        status = PlayerLayoutView._status_text(snapshot, paused=False)
 
-        self.assertIn("ĐANG PHÁT", embed.title)
-        self.assertIn("Dream Love", embed.description)
-        self.assertTrue(any(field.name == "Âm lượng" and field.value == "75%" for field in embed.fields))
+        self.assertIn("NOW PLAYING", status)
+        self.assertIn("Dream Love", status)
+        self.assertIn("VOL 75%", status)
+        self.assertIn("OFFICIAL MV", status)
+        self.assertIn("1.2M VIEWS", status)
 
     async def test_search_results_and_track_actions_match_result_count(self) -> None:
         tracks = [
@@ -214,20 +208,13 @@ class PlayerUITests(unittest.IsolatedAsyncioTestCase):
         parties.end(party)
 
         mood_select = next(item for item in ai.children if isinstance(item, discord.ui.Select))
-        self.assertEqual(len(mood_select.options), 8)
-        self.assertTrue(all("Official MV" in query for query in VPOP_QUERIES.values()))
-        self.assertTrue(
-            _is_song_length(
-                Track("MV", "https://example.com/mv", TrackSource.YOUTUBE, duration=240)
-            )
-        )
-        self.assertFalse(
-            _is_song_length(
-                Track("Long mix", "https://example.com/mix", TrackSource.YOUTUBE, duration=3600)
-            )
-        )
+        radio_select = next(item for item in radio.children if isinstance(item, discord.ui.Select))
+        self.assertEqual(len(mood_select.options), 16)
+        self.assertEqual(len(radio_select.options), 5)
         self.assertEqual(ai.start.label, "Generate Mix")
         self.assertEqual(radio.start.label, "Start Radio")
+        self.assertFalse(ai.refine.disabled)
+        self.assertTrue(radio.refine.disabled)
         self.assertIn("MUSIC WRAPPED 2026", wrapped.embed().title)
         self.assertEqual(party.host_id, 7)
         self.assertTrue(parties.is_active(replacement))

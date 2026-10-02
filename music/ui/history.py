@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 import discord
 
 from ..errors import MusicError
-from ..models import Track, format_duration
+from ..models import Track, format_duration, format_listening_time, shorten_text
 from ..repository import HistoryEntry, ListeningStats, MusicRepository
 
 if TYPE_CHECKING:
@@ -14,18 +14,6 @@ if TYPE_CHECKING:
 
 
 PAGE_SIZE = 8
-
-
-def _shorten(value: str, limit: int) -> str:
-    return value if len(value) <= limit else value[: limit - 1] + "…"
-
-
-def _listening_time(seconds: int) -> str:
-    if seconds < 60:
-        return f"{seconds} giây"
-    hours, remainder = divmod(seconds, 3600)
-    minutes = remainder // 60
-    return f"{hours} giờ {minutes} phút" if hours else f"{minutes} phút"
 
 
 def _played_duration(seconds: int) -> str:
@@ -69,8 +57,8 @@ class HistorySelect(discord.ui.Select):
         entries = self.parent_view.entries[start : start + PAGE_SIZE]
         self.options = [
             discord.SelectOption(
-                label=_shorten(entry.track.title, 100),
-                description=_shorten(
+                label=shorten_text(entry.track.title, 100),
+                description=shorten_text(
                     f"{entry.track.uploader or entry.track.source.value} · "
                     f"đã nghe {_played_duration(entry.listened_seconds)}",
                     100,
@@ -274,7 +262,7 @@ def stats_embed(personal: ListeningStats, server: ListeningStats) -> discord.Emb
         color=0xF9A8D4,
     )
     embed.add_field(name="Lượt phát của bạn", value=f"**{personal.play_count}**", inline=True)
-    embed.add_field(name="Đã nghe", value=f"**{_listening_time(personal.listened_seconds)}**", inline=True)
+    embed.add_field(name="Đã nghe", value=f"**{format_listening_time(personal.listened_seconds)}**", inline=True)
     embed.add_field(name="Bài khác nhau", value=f"**{personal.unique_tracks}**", inline=True)
     embed.add_field(name="Yêu thích", value=f"**{personal.favorite_count}**", inline=True)
     embed.add_field(name="Top nghệ sĩ", value=personal.top_artist or "Chưa có", inline=True)
@@ -287,7 +275,7 @@ def stats_embed(personal: ListeningStats, server: ListeningStats) -> discord.Emb
     embed.add_field(
         name="Toàn server",
         value=(
-            f"**{server.play_count}** lượt phát · {_listening_time(server.listened_seconds)}\n"
+            f"**{server.play_count}** lượt phát · {format_listening_time(server.listened_seconds)}\n"
             f"Top nghệ sĩ: **{server.top_artist or 'Chưa có'}**\n"
             f"Top bài: **{server.top_track or 'Chưa có'}**"
         ),

@@ -8,13 +8,12 @@ from discord import app_commands
 from discord.ext import commands, tasks
 
 from community import CommunityRepository
-from community.achievements import BY_KEY, automatic_keys, featured_keys
+from community.achievements import BY_KEY, automatic_keys, featured_keys, should_announce
 from community.cards import CommunityCardRenderer
 from community.guide_webhook import ServerGuideWebhook
 from branding import BRAND_NAME
 from community.ui import (
     BirthdayView,
-    CommunitySettingsView,
     IntroductionModal,
     WelcomeView,
     analytics_embed,
@@ -80,7 +79,7 @@ class Community(commands.Cog):
             return
         for key in keys:
             item = BY_KEY.get(key)
-            if not item or not item.public:
+            if not item or not should_announce(key):
                 continue
             embed = discord.Embed(
                 title="🏅 THÀNH TỰU MỚI",
@@ -100,10 +99,11 @@ class Community(commands.Cog):
         *,
         announce: bool,
     ) -> list[str]:
-        unlocked = []
-        for key in keys:
-            if await self.repository.unlock_achievement(member.guild.id, member.id, key):
-                unlocked.append(key)
+        unlocked = await self.repository.unlock_achievements(
+            member.guild.id,
+            member.id,
+            keys,
+        )
         if unlocked:
             await self._sync_featured(member.guild.id, member.id)
             if announce:
@@ -410,29 +410,35 @@ class Community(commands.Cog):
         aliases=["congdong", "profile"],
         description="Xem hồ sơ KSC Gaming",
     )
-    async def community_profile(self, ctx: commands.Context) -> None:
+    @app_commands.describe(thanhvien="Thành viên cần xem; bỏ trống để xem hồ sơ của bạn")
+    async def community_profile(
+        self,
+        ctx: commands.Context,
+        thanhvien: discord.Member | None = None,
+    ) -> None:
         if not ctx.guild:
             return
+        target = thanhvien or ctx.author
         profile = await self.repository.get_profile(
             ctx.guild.id,
-            ctx.author.id,
-            ctx.author.display_name,
+            target.id,
+            target.display_name,
         )
-        records = await self.repository.list_achievements(ctx.guild.id, ctx.author.id)
+        records = await self.repository.list_achievements(ctx.guild.id, target.id)
         featured = tuple(
             record.key
             for record in records
             if record.pinned and record.key in BY_KEY
         )
         try:
-            card = await render_profile_card(self.cards, ctx.author, profile, featured)
+            card = await render_profile_card(self.cards, target, profile, featured)
             await self._reply(
                 ctx,
                 file=discord.File(io.BytesIO(card), filename="community-profile.png"),
             )
         except Exception:
-            logger.exception("community_profile_card_failed user_id=%s", ctx.author.id)
-            await self._reply(ctx, embed=community_profile_embed(ctx.author, profile))
+            logger.exception("community_profile_card_failed user_id=%s", target.id)
+            await self._reply(ctx, embed=community_profile_embed(target, profile))
 
     @commands.hybrid_command(name="huyhieu", description="Xem bộ sưu tập huy hiệu tự động")
     async def badges(self, ctx: commands.Context) -> None:

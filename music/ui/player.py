@@ -9,7 +9,7 @@ from discord.ext import commands
 
 from ..errors import MusicError, VoiceStateError
 from ..lyrics import LyricsService
-from ..models import LoopMode, PlaybackSnapshot, Track, TrackSource, format_duration
+from ..models import LoopMode, PlaybackSnapshot, TrackSource, format_compact_number
 from ..player import GuildPlayerSession, MusicPlayerManager
 from ..repository import MusicRepository
 from .card import PlayerCardRenderer
@@ -184,76 +184,6 @@ class PlayerUI:
                     )
             return session.player_message
 
-    @staticmethod
-    def _build_embed(
-        guild: discord.Guild,
-        snapshot: PlaybackSnapshot,
-        paused: bool,
-    ) -> discord.Embed:
-        track = snapshot.current
-        if not track:
-            voice = guild.voice_client
-            embed = discord.Embed(
-                title="🎧 TRÌNH PHÁT NHẠC",
-                description="🎵\n\n**Chưa có bài hát nào đang được phát**",
-                color=0xC4B5FD,
-            )
-            if voice and voice.channel:
-                listeners = sum(1 for member in voice.channel.members if not member.bot)
-                embed.add_field(name="Phòng", value=voice.channel.name, inline=True)
-                embed.add_field(name="Người nghe", value=str(listeners), inline=True)
-            embed.set_footer(text="Dùng nút Tìm nhạc hoặc /phat để bắt đầu")
-            return embed
-
-        color = 0x6EE7B7 if track.source is TrackSource.SOUNDCLOUD else 0xF9A8D4
-        state_label = "⏸️ ĐANG TẠM DỪNG" if paused else "🎧 ĐANG PHÁT"
-        embed = discord.Embed(
-            title=state_label,
-            description=f"### [{track.title}]({track.url})\n{track.uploader or 'Không rõ nghệ sĩ'}",
-            color=color,
-        )
-        embed.add_field(name="Thời lượng", value=format_duration(track.duration), inline=True)
-        embed.add_field(name="Âm lượng", value=f"{round(snapshot.volume * 100)}%", inline=True)
-        embed.add_field(name="Lặp", value=snapshot.loop_mode.value, inline=True)
-        embed.add_field(
-            name="Hiệu ứng",
-            value=snapshot.audio_profile.effect.label,
-            inline=True,
-        )
-        embed.add_field(
-            name="Equalizer",
-            value=snapshot.audio_profile.equalizer.label,
-            inline=True,
-        )
-        embed.add_field(name="Tiếp theo", value=f"{len(snapshot.queue)} bài", inline=True)
-        embed.add_field(name="Nguồn", value=track.source.value, inline=True)
-        embed.add_field(
-            name="Chế độ",
-            value=(
-                f"⚖️ {'Bật' if snapshot.fair_queue else 'Tắt'} · "
-                f"✨ {'Bật' if snapshot.autoplay else 'Tắt'}"
-            ),
-            inline=True,
-        )
-        if track.requester_name:
-            embed.add_field(name="Yêu cầu bởi", value=track.requester_name, inline=True)
-        if track.thumbnail:
-            embed.set_thumbnail(url=track.thumbnail)
-        embed.set_footer(text="KSC Music · YouTube & SoundCloud")
-        return embed
-
-    @staticmethod
-    def queue_text(snapshot: PlaybackSnapshot) -> str:
-        lines = []
-        if snapshot.current:
-            lines.append(f"**Đang phát:** [{snapshot.current.title}]({snapshot.current.url})")
-        for index, track in enumerate(snapshot.queue[:10], start=1):
-            lines.append(f"`{index}.` [{track.title}]({track.url}) · {track.source.value}")
-        if len(snapshot.queue) > 10:
-            lines.append(f"... và {len(snapshot.queue) - 10} bài khác")
-        return "\n".join(lines) if lines else "📭 Hàng đợi đang trống."
-
-
 class PlayerActionButton(discord.ui.Button):
     def __init__(
         self,
@@ -371,9 +301,20 @@ class PlayerLayoutView(discord.ui.LayoutView):
             modes.append("FAIR QUEUE")
         if snapshot.autoplay:
             modes.append("AUTOPLAY")
+        if snapshot.radio_label:
+            modes.append(f"RADIO {snapshot.radio_label.upper()}")
+        details = []
+        if snapshot.current.is_official:
+            details.append("OFFICIAL MV")
+        if snapshot.current.view_count is not None:
+            details.append(f"{format_compact_number(snapshot.current.view_count)} VIEWS")
+        if snapshot.current.view_growth_7d:
+            details.append(f"+{format_compact_number(snapshot.current.view_growth_7d)} / 7D")
+        metadata = f"\n-# {' · '.join(details)}" if details else ""
         return (
             f"### {state} · [{snapshot.current.title}]({snapshot.current.url})\n"
             f"-# {' · '.join(modes)} · {len(snapshot.queue)} UP NEXT"
+            f"{metadata}"
         )
 
 

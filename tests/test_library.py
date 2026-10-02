@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 from dataclasses import replace
+from datetime import date, timedelta
 from pathlib import Path
 
 from music.errors import MusicError
@@ -59,6 +60,24 @@ class MusicRepositoryTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(await self.repository.get_state("webhook"), "123")
         await self.repository.set_state("webhook", "456")
         self.assertEqual(await self.repository.get_state("webhook"), "456")
+
+    async def test_discovery_metrics_attach_real_observed_growth(self) -> None:
+        track = Track(
+            "Official MV",
+            "https://youtube.com/watch?v=metric",
+            TrackSource.YOUTUBE,
+            view_count=1_840_000,
+        )
+        async with self.repository._connect() as db:
+            await db.execute(
+                "INSERT INTO discovery_snapshots(track_url, observed_day, view_count) VALUES (?, ?, ?)",
+                (track.url, (date.today() - timedelta(days=7)).isoformat(), 1_000_000),
+            )
+            await db.commit()
+
+        enriched = await self.repository.enrich_discovery_metrics([track])
+
+        self.assertEqual(enriched[0].view_growth_7d, 840_000)
 
     async def test_history_records_real_listening_time_and_stats(self) -> None:
         requested = replace(self.track, requester_id=7, requester_name="Duy")

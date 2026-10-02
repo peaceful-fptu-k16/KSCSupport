@@ -10,6 +10,7 @@ import discord
 from discord.ext import commands
 
 from .audio import DynamicEqualizerAudio
+from .discovery import DiscoveryPreset, artist_key, discovery_queries, rank_discovery_tracks
 from .errors import MusicError, VoiceStateError
 from .effects import AudioEffect, AudioProfile, EqualizerPreset
 from .extractor import MediaExtractor
@@ -72,6 +73,8 @@ class GuildPlayerSession:
         self.connection_lock = asyncio.Lock()
         self.ui_lock = asyncio.Lock()
         self._autoplay_recent: deque[str] = deque(maxlen=20)
+        self._autoplay_recent_artists: deque[str] = deque(maxlen=5)
+        self._radio_preset: Optional[DiscoveryPreset] = None
 
     async def enqueue_request(
         self,
@@ -248,6 +251,7 @@ class GuildPlayerSession:
                     track.title,
                 )
                 self._autoplay_recent.append(track.url)
+                self._autoplay_recent_artists.append(artist_key(track))
                 await self._notify_start(track)
                 return
 
@@ -349,7 +353,15 @@ class GuildPlayerSession:
     async def set_autoplay(self, enabled: bool) -> bool:
         async with self.state_lock:
             self.state.autoplay = enabled
+            if not enabled:
+                self._radio_preset = None
+                self.state.radio_label = None
             return self.state.autoplay
+
+    async def set_radio_policy(self, preset: DiscoveryPreset) -> None:
+        async with self.state_lock:
+            self._radio_preset = preset
+            self.state.radio_label = preset.label
 
     async def _fill_autoplay(self, seed: Track) -> None:
         async with self.state_lock:
@@ -361,14 +373,19 @@ class GuildPlayerSession:
             ):
                 return
 
-        query = " ".join(part for part in (seed.uploader, seed.title, "mix") if part)
+        preset = self._radio_preset
+        query = (
+            discovery_queries(preset)[len(self._autoplay_recent) % 3]
+            if preset
+            else " ".join(part for part in (seed.uploader, seed.title, "mix") if part)
+        )
         try:
             results = await self.extractor.search_tracks(
                 query,
                 requester_id=None,
-                requester_name="Tự phát",
-                source_hint=seed.source,
-                limit=5,
+                requester_name="Radio" if preset else "Tự phát",
+                source_hint=None if preset else seed.source,
+                limit=10 if preset else 5,
             )
         except MusicError as error:
             logger.info("autoplay_search_failed guild_id=%s error=%s", self.guild_id, error)
@@ -379,7 +396,19 @@ class GuildPlayerSession:
 
         excluded = set(self._autoplay_recent)
         excluded.add(seed.url)
-        candidate = next((track for track in results if track.url not in excluded), None)
+        if preset:
+            ranked = rank_discovery_tracks(results, preset, limit=10, artist_gap=4)
+            recent_artists = set(self._autoplay_recent_artists)
+            candidate = next(
+                (
+                    track
+                    for track in ranked
+                    if track.url not in excluded and artist_key(track) not in recent_artists
+                ),
+                None,
+            )
+        else:
+            candidate = next((track for track in results if track.url not in excluded), None)
         if not candidate:
             logger.info("autoplay_no_candidate guild_id=%s", self.guild_id)
             return

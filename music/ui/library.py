@@ -1,10 +1,10 @@
 import math
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import discord
 
 from ..errors import MusicError
-from ..models import Track, format_duration
+from ..models import Track, format_duration, shorten_text
 from ..repository import MusicRepository, Playlist, PlaylistSummary
 
 if TYPE_CHECKING:
@@ -12,10 +12,6 @@ if TYPE_CHECKING:
 
 
 PAGE_SIZE = 10
-
-
-def _shorten(value: str, limit: int) -> str:
-    return value if len(value) <= limit else value[: limit - 1] + "…"
 
 
 async def _enqueue_tracks(
@@ -51,8 +47,8 @@ class FavoriteSelect(discord.ui.Select):
         tracks = self.parent_view.tracks[start : start + PAGE_SIZE]
         self.options = [
             discord.SelectOption(
-                label=_shorten(track.title, 100),
-                description=_shorten(track.uploader or track.source.value, 100),
+                label=shorten_text(track.title, 100),
+                description=shorten_text(track.uploader or track.source.value, 100),
                 value=str(start + index),
             )
             for index, track in enumerate(tracks)
@@ -209,7 +205,7 @@ class PlaylistSelect(discord.ui.Select):
         playlists = self.parent_view.playlists[start : start + PAGE_SIZE]
         self.options = [
             discord.SelectOption(
-                label=_shorten(playlist.name, 100),
+                label=shorten_text(playlist.name, 100),
                 description=f"{playlist.track_count} bài",
                 value=str(playlist.playlist_id),
             )

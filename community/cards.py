@@ -306,11 +306,17 @@ class CommunityCardRenderer:
     def _badge_symbol(draw: ImageDraw.ImageDraw, key: str, color: tuple[int, int, int]) -> None:
         white = (248, 250, 252, 245)
         soft = (*color, 245)
-        if key in {"member_new", "member_familiar"}:
-            scale = 0 if key == "member_new" else 3
-            draw.line((34, 50, 34, 30 - scale), fill=white, width=4)
-            draw.ellipse((19 - scale, 19 - scale, 35, 35), fill=soft)
-            draw.ellipse((33, 14 - scale, 51 + scale, 32), fill=soft)
+        if key in {"member_new", "member_week", "member_month", "member_familiar"}:
+            stages = {"member_new": 0, "member_week": 1, "member_month": 2, "member_familiar": 3}
+            stage = stages[key]
+            draw.line((34, 52, 34, 29 - stage), fill=white, width=4)
+            draw.ellipse((19 - stage, 20 - stage, 35, 36), fill=soft)
+            if stage >= 1:
+                draw.ellipse((33, 16 - stage, 50 + stage, 33), fill=soft)
+            if stage >= 2:
+                draw.ellipse((27, 10 - stage, 41, 24), fill=white)
+            if stage >= 3:
+                draw.line((20, 48, 48, 48), fill=soft, width=3)
         elif key == "member_longtime":
             draw.rectangle((30, 35, 38, 53), fill=white)
             draw.ellipse((16, 14, 40, 39), fill=soft)
@@ -320,29 +326,54 @@ class CommunityCardRenderer:
             for px in (19, 30, 41):
                 draw.rectangle((px, 28, px + 7, 48), fill=white)
             draw.rectangle((14, 49, 54, 54), fill=soft)
+        elif key == "member_legacy":
+            draw.polygon(((34, 10), (53, 18), (50, 43), (34, 56), (18, 43), (15, 18)), fill=soft)
+            draw.polygon(((34, 18), (39, 29), (51, 30), (42, 38), (45, 49), (34, 42), (23, 49), (26, 38), (17, 30), (29, 29)), fill=white)
         elif key.startswith("chat_"):
             draw.rounded_rectangle((13, 17, 48, 43), radius=8, fill=soft)
             draw.polygon(((22, 41), (21, 52), (33, 42)), fill=soft)
-            if key == "chat_start":
+            if key == "chat_hello":
                 draw.ellipse((27, 28, 33, 34), fill=white)
+            elif key == "chat_start":
+                for px in (26, 35):
+                    draw.ellipse((px, 28, px + 5, 33), fill=white)
+            elif key == "chat_social":
+                draw.ellipse((23, 26, 28, 31), fill=white)
+                draw.ellipse((37, 26, 42, 31), fill=white)
+                draw.arc((24, 27, 42, 39), 10, 170, fill=white, width=2)
             elif key == "chat_regular":
                 for px in (22, 31, 40):
                     draw.ellipse((px, 28, px + 5, 33), fill=white)
+            elif key == "chat_connector":
+                draw.ellipse((20, 26, 31, 37), outline=white, width=3)
+                draw.ellipse((34, 26, 45, 37), outline=white, width=3)
+                draw.line((29, 31, 36, 31), fill=white, width=3)
             elif key == "chat_active":
                 draw.polygon(((48, 53), (43, 42), (49, 35), (51, 43), (56, 38), (57, 48)), fill=white)
+            elif key == "chat_icon":
+                draw.polygon(((31, 22), (34, 28), (42, 29), (36, 34), (38, 41), (31, 37), (24, 41), (26, 34), (20, 29), (28, 28)), fill=white)
             else:
                 draw.line((19, 30, 42, 30), fill=white, width=3)
                 draw.line((24, 36, 38, 36), fill=white, width=3)
+        elif key == "voice_warmup":
+            draw.polygon(((16, 29), (25, 29), (36, 19), (36, 49), (25, 39), (16, 39)), fill=soft)
+            draw.arc((31, 23, 51, 45), 285, 75, fill=white, width=3)
+            draw.arc((35, 18, 58, 50), 285, 75, fill=white, width=3)
         elif key == "voice_start":
             draw.rounded_rectangle((27, 14, 41, 42), radius=7, fill=soft)
             draw.arc((20, 25, 48, 50), 0, 180, fill=white, width=4)
             draw.line((34, 49, 34, 55), fill=white, width=4)
-        elif key == "voice_regular":
+        elif key in {"voice_social", "voice_regular"}:
             draw.arc((15, 14, 53, 52), 180, 360, fill=soft, width=6)
             draw.rounded_rectangle((13, 31, 23, 50), radius=4, fill=white)
             draw.rounded_rectangle((45, 31, 55, 50), radius=4, fill=white)
-        elif key == "voice_veteran":
+            if key == "voice_social":
+                draw.ellipse((31, 30, 37, 36), fill=soft)
+        elif key == "voice_devoted":
             draw.polygon(((34, 10), (23, 30), (29, 30), (20, 53), (45, 32), (38, 32), (47, 14)), fill=soft)
+        elif key == "voice_veteran":
+            draw.polygon(((34, 9), (25, 29), (30, 27), (22, 47), (34, 56), (47, 47), (43, 30), (38, 35)), fill=soft)
+            draw.polygon(((34, 31), (29, 44), (34, 50), (40, 44)), fill=white)
         elif key == "voice_legend":
             draw.polygon(((13, 25), (24, 34), (34, 16), (44, 34), (55, 25), (51, 49), (17, 49)), fill=soft)
             draw.rectangle((18, 51, 50, 55), fill=white)
@@ -362,6 +393,25 @@ class CommunityCardRenderer:
             draw.arc((39, 15, 58, 39), 260, 100, fill=white, width=4)
             draw.rectangle((31, 39, 37, 50), fill=white)
             draw.rounded_rectangle((23, 49, 45, 55), radius=3, fill=soft)
+        elif key == "special_host":
+            draw.rounded_rectangle((27, 13, 41, 39), radius=7, fill=soft)
+            draw.arc((20, 22, 48, 48), 0, 180, fill=white, width=4)
+            draw.line((34, 46, 34, 55), fill=white, width=4)
+        elif key == "special_curator":
+            draw.line((31, 18, 31, 46), fill=soft, width=5)
+            draw.line((31, 18, 50, 14), fill=soft, width=5)
+            draw.line((50, 14, 50, 40), fill=soft, width=5)
+            draw.ellipse((17, 40, 33, 53), fill=white)
+            draw.ellipse((36, 34, 52, 47), fill=white)
+        elif key == "special_creator":
+            draw.ellipse((13, 13, 54, 54), fill=soft)
+            draw.ellipse((20, 21, 27, 28), fill=white)
+            draw.ellipse((31, 17, 38, 24), fill=white)
+            draw.ellipse((41, 24, 48, 31), fill=white)
+            draw.line((29, 45, 48, 36), fill=white, width=4)
+        elif key == "special_legend":
+            draw.polygon(((34, 8), (41, 25), (59, 26), (45, 38), (49, 56), (34, 46), (19, 56), (23, 38), (9, 26), (27, 25)), fill=soft)
+            draw.ellipse((29, 29, 39, 39), fill=white)
         else:
             draw.ellipse((25, 25, 43, 43), fill=soft)
 
@@ -388,7 +438,6 @@ class CommunityCardRenderer:
         interest_text = interests.strip() or "Chưa chia sẻ sở thích"
         draw.text((405, 500), "INTERESTS", font=self._font(15, bold=True), fill=MUTED)
         self._fitted(draw, interest_text, (405, 528), 660, 20, min_size=15, bold=True, fill=LAVENDER)
-        draw.text((82, 72), "KSC COMMUNITY", font=self._font(19, bold=True), fill=TEXT)
         return self._png(image)
 
     def _draw_analytics(self, snapshot, server_name: str) -> bytes:

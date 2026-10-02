@@ -70,8 +70,6 @@ class MusicBot(commands.Bot):
     async def setup_hook(self) -> None:
         await self.load_extension("cogs.music")
         await self.load_extension("cogs.community")
-        synced = await self.tree.sync()
-        logger.info("Synced %s slash commands", len(synced))
         guild_id = os.getenv("DISCORD_GUILD_ID", "").strip()
         if guild_id.isdigit():
             guild = discord.Object(id=int(guild_id))
@@ -82,6 +80,15 @@ class MusicBot(commands.Bot):
                 len(guild_synced),
                 guild_id,
             )
+            self.tree.clear_commands(guild=None)
+            global_synced = await self.tree.sync()
+            logger.info(
+                "Cleared global slash commands to prevent guild duplicates remaining=%s",
+                len(global_synced),
+            )
+        else:
+            synced = await self.tree.sync()
+            logger.info("Synced %s global slash commands", len(synced))
 
     async def on_ready(self) -> None:
         if self.user and not self._brand_avatar_synced:

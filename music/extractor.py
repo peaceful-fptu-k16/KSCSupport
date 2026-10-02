@@ -5,6 +5,7 @@ import re
 import subprocess
 import sys
 from collections.abc import Mapping
+from datetime import datetime, timezone
 from typing import Any, Optional
 
 import discord
@@ -257,7 +258,34 @@ class MediaExtractor:
             thumbnail=cls._thumbnail(info),
             requester_id=requester_id,
             requester_name=requester_name,
+            view_count=cls._optional_int(info.get("view_count")),
+            upload_date=cls._upload_date(info),
+            channel_id=str(info.get("channel_id") or info.get("uploader_id") or "") or None,
+            channel_verified=bool(
+                info.get("channel_is_verified")
+                or info.get("uploader_is_verified")
+                or info.get("is_verified")
+            ),
+            discovery_text=str(info.get("description") or "")[:2000] or None,
         )
+
+    @staticmethod
+    def _optional_int(value: Any) -> Optional[int]:
+        try:
+            return max(0, int(value)) if value is not None else None
+        except (TypeError, ValueError):
+            return None
+
+    @staticmethod
+    def _upload_date(info: Mapping[str, Any]) -> Optional[str]:
+        raw = str(info.get("upload_date") or info.get("release_date") or "")
+        if len(raw) == 8 and raw.isdigit():
+            return f"{raw[:4]}-{raw[4:6]}-{raw[6:]}"
+        timestamp = info.get("release_timestamp") or info.get("timestamp")
+        try:
+            return datetime.fromtimestamp(float(timestamp), timezone.utc).date().isoformat()
+        except (TypeError, ValueError, OSError):
+            return None
 
     @classmethod
     def _thumbnail(cls, info: Mapping[str, Any]) -> Optional[str]:

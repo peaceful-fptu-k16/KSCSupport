@@ -13,7 +13,7 @@ profile đồ họa, thành tựu tự động và analytics theo thời gian th
 [![discord.py](https://img.shields.io/badge/discord.py-2.7+-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discordpy.readthedocs.io/)
 [![YouTube](https://img.shields.io/badge/YouTube-ready-FF0033?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/)
 [![SoundCloud](https://img.shields.io/badge/SoundCloud-ready-FF5500?style=for-the-badge&logo=soundcloud&logoColor=white)](https://soundcloud.com/)
-[![Tests](https://img.shields.io/badge/tests-67%20passing-2CB67D?style=for-the-badge)](#kiểm-thử)
+[![Tests](https://img.shields.io/badge/tests-79%20passing-2CB67D?style=for-the-badge)](#kiểm-thử)
 
 [Tính năng](#tính-năng-nổi-bật) · [Cài đặt](#khởi-động-nhanh) · [Lệnh](#lệnh) · [Cấu hình](#cấu-hình) · [Kiến trúc](#kiến-trúc)
 
@@ -52,8 +52,8 @@ Profile Card 1200×675 tập trung vào avatar, số liệu cộng đồng và t
 | **Live Player** | Components V2, artwork, waveform, progress, volume, loop và controls tiếng Anh. |
 | **Audio Lab** | Equalizer realtime không ngắt nhạc; Bass Boost, 8D, Nightcore, Vaporwave và nhiều preset FFmpeg. |
 | **Music Library** | Yêu thích, playlist cá nhân, lịch sử, lời bài hát, thống kê và Wrapped. |
-| **Discovery** | AI DJ ưu tiên V-Pop Official MV, mood radio, autoplay thông minh và Listening Party. |
-| **Community** | Welcome, introduction, birthday, Profile Card, achievement và celebration tự động. |
+| **Discovery** | Radio xu hướng V-Pop và AI DJ theo gu, chỉ dùng Official MV từ nghệ sĩ/label chính thức. |
+| **Community** | Welcome, introduction, birthday, Profile Card, 30 achievement và celebration tự động. |
 | **Analytics** | Heatmap, peak time, growth, funnel, retention, voice activity và Discord Event Analytics. |
 | **Operations** | Control Center trong Discord, webhook cố định, SQLite bền vững và slash command sync nhanh. |
 
@@ -65,11 +65,26 @@ Profile Card 1200×675 tập trung vào avatar, số liệu cộng đồng và t
 - Playlist được giới hạn 50 bài để một yêu cầu không làm nghẽn hệ thống.
 - YouTube được pipe trực tiếp từ `yt-dlp` sang FFmpeg, giảm lỗi URL CDN hết hạn và HTTP 403.
 
+### Radio và AI DJ
+
+`/radio` trả lời câu hỏi “V-Pop hiện có gì hot?” bằng năm đài tự động: **V-Pop
+Trending**, **Nhạc Việt Mới**, **Đang Tăng Nhanh**, **Triệu View** và **V-Pop Hits**.
+Radio tự tránh lặp nghệ sĩ trong năm lượt gần nhất và không phát lại URL vừa nghe.
+
+`/aidj` dùng cùng kho nhạc Việt Official MV nhưng cho phép chọn gu: V-Pop, Chill,
+Love, Tâm trạng, Năng lượng, Rap Việt, Drill, Hoodtrap, Jerk Drill, Sexy Drill,
+Trap, Rage, Melodic Rap và Hip-Hop/R&B. Nút **Refine** nhận thêm genre, vibe,
+độ trend và độ mới trước khi tạo mix 18 bài.
+
+Bộ lọc loại Lyrics, karaoke, cover, reupload, fanmade, sped up, slowed, visualizer,
+official audio, live performance và remix không chính thức. Player hiển thị dấu
+**Official MV**, lượt xem và mức tăng trong 7 ngày khi đã có đủ snapshot thực tế.
+
 ### Community chạy tự động
 
 - Ghi nhận ngày gắn bó, tin nhắn và thời gian voice theo luồng nhẹ.
 - Tự mở khóa achievement và tự chọn năm huy hiệu nổi bật nhất.
-- Chỉ công bố cột mốc lớn tại `#celebrations` để tránh spam.
+- Công bố mọi achievement tại `#celebrations`, ngoại trừ huy hiệu Thành viên mới khi vừa join.
 - Birthday Celebration, Weekly Recap và Analytics có cơ chế chống đăng trùng.
 - Control Center cho phép admin bật/tắt tính năng, chọn kênh và quyền riêng tư ngay trong `#bot-config`.
 
@@ -110,8 +125,9 @@ python bot.py
 ```
 
 Khi bot sẵn sàng, log sẽ có `Connected as ...` và số slash command đã đồng bộ.
-Đặt `DISCORD_GUILD_ID` để command xuất hiện gần như ngay lập tức trong máy chủ chính;
-bot vẫn duy trì bản global command cho các máy chủ khác.
+Đặt `DISCORD_GUILD_ID` để dùng một bộ guild command xuất hiện gần như ngay lập tức
+trong máy chủ chính. Khi có giá trị này, bot tự xóa bản global cũ để Discord không hiển thị
+command trùng lặp. Bỏ trống biến nếu muốn triển khai bot bằng global command cho nhiều server.
 
 ## Cấu hình
 
@@ -120,7 +136,7 @@ Sao chép `.env.example` thành `.env`. Không commit token hoặc webhook URL l
 | Biến | Bắt buộc | Mặc định | Mục đích |
 |---|:---:|---|---|
 | `DISCORD_BOT_TOKEN` | Có | — | Token đăng nhập Discord bot. |
-| `DISCORD_GUILD_ID` | Nên có | — | Sync slash command nhanh cho server chính. |
+| `DISCORD_GUILD_ID` | Nên có | — | Dùng guild-only command nhanh và không trùng trong server chính. |
 | `BOT_PREFIX` | Không | `!` | Tiền tố cho hybrid command. |
 | `BOT_BRAND_NAME` | Không | `KSC Gaming` | Tên thương hiệu dùng trên toàn bộ UI. |
 | `BOT_MASCOT_PATH` | Không | `docs/assets/ksc-mascot.png` | Mascot toàn thân dùng cho bot, webhook và card. |
@@ -187,7 +203,8 @@ với tiền tố `!command`.
 | `/loibaihat` | Xem lời bài đang phát. |
 | `/yeuthich` · `/playlist` | Mở thư viện cá nhân. |
 | `/lichsu` · `/thongke` | Xem lịch sử và thống kê nghe nhạc. |
-| `/aidj` · `/radio` | Khám phá V-Pop theo mood và gu nghe. |
+| `/radio` | Mở 5 đài V-Pop Official MV theo xu hướng, độ mới, tăng trưởng và lượt xem. |
+| `/aidj` | Tạo mix Official MV theo genre, vibe, độ trend và độ mới cá nhân. |
 | `/party` | Mở Listening Party trong voice channel. |
 | `/hosonhac` · `/wrapped` | Xem hồ sơ và tổng kết âm nhạc. |
 
@@ -195,7 +212,7 @@ với tiền tố `!command`.
 
 | Lệnh | Công dụng |
 |---|---|
-| `/hoso` | Xem Community Profile Card. |
+| `/hoso [thanhvien]` | Xem Profile Card của bạn hoặc một thành viên khác. |
 | `/huyhieu` · `/thanhtich` | Xem bộ sưu tập và tiến độ achievement. |
 | `/gioithieu` | Mở form giới thiệu bản thân. |
 | `/sinhnhat` · `/lichsinhnhat` | Cập nhật hoặc xem lịch sinh nhật. |

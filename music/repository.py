@@ -1,7 +1,8 @@
 import hashlib
 import os
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from datetime import date, timedelta
 from pathlib import Path
 from typing import AsyncIterator, Optional
 
@@ -130,6 +131,16 @@ class MusicRepository:
                     value TEXT NOT NULL,
                     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
                 );
+
+                CREATE TABLE IF NOT EXISTS discovery_snapshots (
+                    track_url TEXT NOT NULL,
+                    observed_day TEXT NOT NULL,
+                    view_count INTEGER NOT NULL,
+                    PRIMARY KEY (track_url, observed_day)
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_discovery_snapshots_lookup
+                    ON discovery_snapshots(track_url, observed_day DESC);
                 """
             )
             await db.commit()
@@ -153,6 +164,44 @@ class MusicRepository:
                 (key, value),
             )
             await db.commit()
+
+    async def enrich_discovery_metrics(self, tracks: list[Track]) -> list[Track]:
+        """Persist daily view snapshots and attach an observed seven-day delta."""
+        today = date.today()
+        earliest = (today - timedelta(days=7)).isoformat()
+        result: list[Track] = []
+        async with self._connect() as db:
+            await db.execute("BEGIN IMMEDIATE")
+            for track in tracks:
+                if track.view_count is None:
+                    result.append(track)
+                    continue
+                row = await self._fetchone(
+                    db,
+                    """
+                    SELECT view_count FROM discovery_snapshots
+                    WHERE track_url = ? AND observed_day >= ? AND observed_day < ?
+                    ORDER BY observed_day ASC LIMIT 1
+                    """,
+                    (track.url, earliest, today.isoformat()),
+                )
+                growth = max(0, track.view_count - int(row[0])) if row else None
+                await db.execute(
+                    """
+                    INSERT INTO discovery_snapshots(track_url, observed_day, view_count)
+                    VALUES (?, ?, ?)
+                    ON CONFLICT(track_url, observed_day) DO UPDATE SET
+                        view_count = MAX(view_count, excluded.view_count)
+                    """,
+                    (track.url, today.isoformat(), track.view_count),
+                )
+                result.append(replace(track, view_growth_7d=growth))
+            await db.execute(
+                "DELETE FROM discovery_snapshots WHERE observed_day < ?",
+                ((today - timedelta(days=45)).isoformat(),),
+            )
+            await db.commit()
+        return result
 
     async def record_playback_start(self, guild_id: int, track: Track) -> int:
         async with self._connect() as db:

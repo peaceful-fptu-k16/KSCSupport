@@ -3,15 +3,11 @@ from typing import Optional
 
 import discord
 
-from ..errors import MusicError, VoiceStateError
-from ..models import Track, TrackSource, format_duration
+from ..errors import MusicError
+from ..models import Track, TrackSource, format_duration, shorten_text
 
 
 logger = logging.getLogger(__name__)
-
-
-def _shorten(value: str, limit: int) -> str:
-    return value if len(value) <= limit else value[: limit - 1] + "…"
 
 
 class SearchModal(discord.ui.Modal):
@@ -62,7 +58,7 @@ class SearchModal(discord.ui.Modal):
 
         embed = discord.Embed(
             title="🔎 KẾT QUẢ TÌM KIẾM",
-            description=f'Kết quả cho **"{_shorten(self.query.value, 80)}"**',
+            description=f'Kết quả cho **"{shorten_text(self.query.value, 80)}"**',
             color=0xC4B5FD,
         )
         for index, track in enumerate(tracks, start=1):
@@ -82,9 +78,9 @@ class SearchResultSelect(discord.ui.Select):
     def __init__(self, ui, tracks: list[Track], owner_id: int) -> None:
         options = [
             discord.SelectOption(
-                label=_shorten(track.title, 100),
+                label=shorten_text(track.title, 100),
                 value=str(index),
-                description=_shorten(
+                description=shorten_text(
                     f"{track.uploader or track.source.value} · {format_duration(track.duration)}",
                     100,
                 ),

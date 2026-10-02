@@ -731,16 +731,40 @@ class CommunityRepository:
         )
 
     async def unlock_achievement(self, guild_id: int, user_id: int, key: str) -> bool:
+        return bool(await self.unlock_achievements(guild_id, user_id, [key]))
+
+    async def unlock_achievements(
+        self,
+        guild_id: int,
+        user_id: int,
+        keys: list[str],
+    ) -> list[str]:
+        unique = list(dict.fromkeys(keys))
+        if not unique:
+            return []
         async with self._connect() as db:
-            cursor = await db.execute(
+            await db.execute("BEGIN IMMEDIATE")
+            placeholders = ", ".join("?" for _ in unique)
+            rows = await self._fetchall(
+                db,
+                f"""
+                SELECT badge_key FROM achievements
+                WHERE guild_id = ? AND user_id = ?
+                  AND badge_key IN ({placeholders})
+                """,
+                (guild_id, user_id, *unique),
+            )
+            existing = {str(row[0]) for row in rows}
+            unlocked = [key for key in unique if key not in existing]
+            await db.executemany(
                 """
                 INSERT OR IGNORE INTO achievements(guild_id, user_id, badge_key)
                 VALUES (?, ?, ?)
                 """,
-                (guild_id, user_id, key),
+                [(guild_id, user_id, key) for key in unlocked],
             )
             await db.commit()
-            return cursor.rowcount > 0
+            return unlocked
 
     async def list_achievements(self, guild_id: int, user_id: int) -> list[AchievementRecord]:
         async with self._connect() as db:

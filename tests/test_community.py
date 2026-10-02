@@ -7,7 +7,13 @@ from pathlib import Path
 from PIL import Image
 
 from community.cards import CommunityCardRenderer
-from community.achievements import automatic_keys, featured_keys
+from community.achievements import (
+    ACHIEVEMENTS,
+    BY_KEY,
+    automatic_keys,
+    featured_keys,
+    should_announce,
+)
 from community.repository import CommunityRepository
 from community.ui import AchievementsView, analytics_embed, birthday_calendar_embed, weekly_embed
 
@@ -85,10 +91,36 @@ class CommunityRepositoryTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_automatic_achievement_thresholds(self) -> None:
         keys = automatic_keys(days=365, messages=5_000, voice_seconds=100 * 3600)
+        self.assertIn("member_week", keys)
         self.assertIn("member_longtime", keys)
+        self.assertIn("chat_connector", keys)
         self.assertIn("chat_active", keys)
+        self.assertIn("voice_warmup", keys)
         self.assertIn("voice_regular", keys)
         self.assertNotIn("special_founder", keys)
+
+    async def test_bulk_achievement_unlock_is_idempotent(self) -> None:
+        keys = ["member_new", "member_week", "member_month", "member_week"]
+
+        first = await self.repository.unlock_achievements(10, 7, keys)
+        second = await self.repository.unlock_achievements(10, 7, keys)
+
+        self.assertEqual(first, ["member_new", "member_week", "member_month"])
+        self.assertEqual(second, [])
+
+    async def test_expanded_achievement_catalog_is_unique_and_balanced(self) -> None:
+        self.assertEqual(len(ACHIEVEMENTS), 30)
+        self.assertEqual(len(BY_KEY), len(ACHIEVEMENTS))
+        self.assertEqual(sum(item.manual for item in ACHIEVEMENTS), 8)
+        self.assertTrue(BY_KEY["member_legacy"].public)
+        self.assertTrue(BY_KEY["chat_icon"].public)
+        self.assertTrue(BY_KEY["voice_veteran"].public)
+
+    async def test_every_achievement_except_new_member_is_announced(self) -> None:
+        announced = {item.key for item in ACHIEVEMENTS if should_announce(item.key)}
+
+        self.assertEqual(announced, {item.key for item in ACHIEVEMENTS} - {"member_new"})
+        self.assertFalse(should_announce("unknown"))
 
     async def test_featured_achievements_are_selected_and_saved_automatically(self) -> None:
         unlocked = [
