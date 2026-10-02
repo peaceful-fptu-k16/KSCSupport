@@ -1,255 +1,337 @@
 <div align="center">
+  <img src="docs/assets/ksc-mascot-animated.png" width="240" alt="KSC Gaming animated mascot" />
 
-<img src="docs/assets/ksc-mascot-animated.png" width="270" alt="KSC Gaming mascot" />
+  <h1>KSC Gaming</h1>
 
-# KSC Gaming
+  <p><strong>A Discord-native music player and living community system.</strong></p>
 
-### Music that moves. Community that stays.
+  <p>
+    Phát nhạc Việt đúng gu. Ghi nhận từng khoảnh khắc cộng đồng.<br />
+    Mọi trải nghiệm diễn ra trực tiếp trong Discord, với một nhận diện thống nhất.
+  </p>
 
-Discord bot phát nhạc YouTube và SoundCloud kết hợp hệ thống cộng đồng,
-profile đồ họa, thành tựu tự động và analytics theo thời gian thực.
+  <p>
+    <a href="#-trải-nghiệm"><strong>Trải nghiệm</strong></a>
+    ·
+    <a href="#-music-system"><strong>Music System</strong></a>
+    ·
+    <a href="#-community-system"><strong>Community System</strong></a>
+    ·
+    <a href="#-khởi-động"><strong>Khởi động</strong></a>
+  </p>
 
-[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![discord.py](https://img.shields.io/badge/discord.py-2.7+-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discordpy.readthedocs.io/)
-[![YouTube](https://img.shields.io/badge/YouTube-ready-FF0033?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/)
-[![SoundCloud](https://img.shields.io/badge/SoundCloud-ready-FF5500?style=for-the-badge&logo=soundcloud&logoColor=white)](https://soundcloud.com/)
-[![Tests](https://img.shields.io/badge/tests-79%20passing-2CB67D?style=for-the-badge)](#kiểm-thử)
-
-[Tính năng](#tính-năng-nổi-bật) · [Cài đặt](#khởi-động-nhanh) · [Lệnh](#lệnh) · [Cấu hình](#cấu-hình) · [Kiến trúc](#kiến-trúc)
-
+  <p>
+    <img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.11+" />
+    <img src="https://img.shields.io/badge/discord.py-2.7+-5865F2?style=flat-square&logo=discord&logoColor=white" alt="discord.py 2.7+" />
+    <img src="https://img.shields.io/badge/YouTube-supported-FF0033?style=flat-square&logo=youtube&logoColor=white" alt="YouTube supported" />
+    <img src="https://img.shields.io/badge/SoundCloud-supported-FF5500?style=flat-square&logo=soundcloud&logoColor=white" alt="SoundCloud supported" />
+    <img src="https://img.shields.io/badge/tests-79%20passing-2CB67D?style=flat-square" alt="79 tests passing" />
+  </p>
 </div>
 
 ---
 
-## Trải nghiệm
+## ✦ Tổng quan
+
+<table>
+  <tr>
+    <td width="25%" align="center"><strong>39</strong><br /><sub>SLASH COMMANDS</sub></td>
+    <td width="25%" align="center"><strong>30</strong><br /><sub>ACHIEVEMENTS</sub></td>
+    <td width="25%" align="center"><strong>5</strong><br /><sub>V-POP RADIOS</sub></td>
+    <td width="25%" align="center"><strong>16</strong><br /><sub>AI DJ PRESETS</sub></td>
+  </tr>
+</table>
+
+KSC Gaming không phải tập hợp những command rời rạc. Bot được xây như một sản phẩm
+Discord hoàn chỉnh: player cố định, UI tương tác, dữ liệu bền vững, tác vụ cộng đồng tự động
+và hệ thống đồ họa dùng chung mascot KSC.
+
+> **Ít rác trong chat, ít thao tác thủ công, nhiều tín hiệu hữu ích.**
+
+## ✦ Trải nghiệm
 
 <table>
   <tr>
     <td width="50%" align="center">
-      <img src="docs/assets/welcome-card.gif" alt="Animated Welcome Card" />
-      <br /><strong>Animated Welcome</strong><br />Shimmer, avatar pulse và hướng dẫn bắt đầu.
+      <img src="docs/assets/welcome-card.gif" alt="KSC animated welcome card" />
+      <br />
+      <strong>Welcome, có chuyển động</strong>
+      <br />
+      <sub>Shimmer, avatar pulse và hướng dẫn nhập hội.</sub>
     </td>
     <td width="50%" align="center">
-      <img src="docs/assets/birthday-card.gif" alt="Animated Birthday Card" />
-      <br /><strong>Birthday Celebration</strong><br />Confetti, lời chúc và giao diện sinh nhật riêng.
+      <img src="docs/assets/birthday-card.gif" alt="KSC animated birthday card" />
+      <br />
+      <strong>Birthday Celebration</strong>
+      <br />
+      <sub>Confetti, lời chúc và diện mạo riêng trong ngày sinh nhật.</sub>
     </td>
   </tr>
 </table>
 
 <p align="center">
-  <img src="docs/assets/profile-card.png" width="900" alt="KSC Gaming Community Profile Card" />
+  <img src="docs/assets/profile-card.png" width="920" alt="KSC Gaming member profile card" />
 </p>
 
-Profile Card 1200×675 tập trung vào avatar, số liệu cộng đồng và tối đa năm huy hiệu
-được thể hiện bằng icon riêng. Card sử dụng dark glass, pastel accents và typography
-đồng nhất với toàn bộ giao diện KSC Gaming.
+<p align="center">
+  <strong>Một visual language xuyên suốt.</strong><br />
+  <sub>Dark glass · pastel accents · mascot KSC · card 1200 × 675 · tối đa 5 huy hiệu nổi bật</sub>
+</p>
 
-## Tính năng nổi bật
+## ✦ Ba lớp sản phẩm
 
-| Hệ thống | Khả năng |
-|---|---|
-| **Music Engine** | Phát YouTube, SoundCloud, playlist, tìm kiếm tương tác và hàng đợi đa máy chủ. |
-| **Live Player** | Components V2, artwork, waveform, progress, volume, loop và controls tiếng Anh. |
-| **Audio Lab** | Equalizer realtime không ngắt nhạc; Bass Boost, 8D, Nightcore, Vaporwave và nhiều preset FFmpeg. |
-| **Music Library** | Yêu thích, playlist cá nhân, lịch sử, lời bài hát, thống kê và Wrapped. |
-| **Discovery** | Radio xu hướng V-Pop và AI DJ theo gu, chỉ dùng Official MV từ nghệ sĩ/label chính thức. |
-| **Community** | Welcome, introduction, birthday, Profile Card, 30 achievement và celebration tự động. |
-| **Analytics** | Heatmap, peak time, growth, funnel, retention, voice activity và Discord Event Analytics. |
-| **Operations** | Control Center trong Discord, webhook cố định, SQLite bền vững và slash command sync nhanh. |
+<table>
+  <tr>
+    <td width="33%" valign="top">
+      <h3>Music</h3>
+      YouTube, SoundCloud, playlist, tìm kiếm, queue, lyrics, library, audio effects và player Components V2.
+    </td>
+    <td width="33%" valign="top">
+      <h3>Community</h3>
+      Welcome, profile, birthday, achievement, celebrations, events và weekly recap hoàn toàn tự động.
+    </td>
+    <td width="33%" valign="top">
+      <h3>Operations</h3>
+      Analytics, Control Center, member log, webhook cố định, privacy controls và SQLite bền vững.
+    </td>
+  </tr>
+</table>
 
-### Music không làm bẩn kênh chat
+## ✦ Music System
 
-- Tin nhắn yêu cầu bài được xóa sau khi xử lý.
-- Player công khai chỉ có một bản và luôn được cập nhật tại chỗ.
-- Webhook Now Playing có thể tự đưa card xuống cuối kênh khi xuất hiện hội thoại mới.
-- Playlist được giới hạn 50 bài để một yêu cầu không làm nghẽn hệ thống.
-- YouTube được pipe trực tiếp từ `yt-dlp` sang FFmpeg, giảm lỗi URL CDN hết hạn và HTTP 403.
+### Player giữ kênh chat sạch
+
+- Tin nhắn gọi nhạc được xóa sau khi xử lý.
+- Chỉ duy trì một Player công khai và cập nhật ngay trên message hiện có.
+- Now Playing webhook tự trở lại cuối kênh khi hội thoại tiếp tục.
+- Thumbnail, waveform, progress, volume, loop, queue và audio profile nằm trong cùng UI.
+- YouTube được pipe thẳng từ `yt-dlp` sang FFmpeg để hạn chế URL CDN hết hạn và HTTP 403.
+
+```text
+REQUEST
+   │
+   ├── YouTube / SoundCloud / Playlist
+   │
+   ▼
+DISCOVERY ──► METADATA ──► FAIR QUEUE ──► AUDIO PIPELINE
+   │                                          │
+   └── Radio / AI DJ                          ├── Realtime EQ
+                                              └── FFmpeg effects
+```
 
 ### Radio và AI DJ
 
-`/radio` trả lời câu hỏi “V-Pop hiện có gì hot?” bằng năm đài tự động: **V-Pop
-Trending**, **Nhạc Việt Mới**, **Đang Tăng Nhanh**, **Triệu View** và **V-Pop Hits**.
-Radio tự tránh lặp nghệ sĩ trong năm lượt gần nhất và không phát lại URL vừa nghe.
+| | **Radio** | **AI DJ** |
+|---|---|---|
+| Câu hỏi | “V-Pop hiện có gì hot?” | “Trong nhạc Việt đang hot, đâu là đúng gu tôi?” |
+| Điều khiển | Bot tự chọn hoàn toàn | Chọn genre, vibe, độ trend và độ mới |
+| Nguồn | Nhạc Việt, Official MV | Cùng kho Official MV đã kiểm duyệt |
+| Độ dài | 12 bài và tiếp tục tự động | Mix 18 bài |
+| Chống lặp | URL gần đây và nghệ sĩ trong 5 lượt | Loại trùng trong mỗi mix |
 
-`/aidj` dùng cùng kho nhạc Việt Official MV nhưng cho phép chọn gu: V-Pop, Chill,
-Love, Tâm trạng, Năng lượng, Rap Việt, Drill, Hoodtrap, Jerk Drill, Sexy Drill,
-Trap, Rage, Melodic Rap và Hip-Hop/R&B. Nút **Refine** nhận thêm genre, vibe,
-độ trend và độ mới trước khi tạo mix 18 bài.
+**5 Radio**
 
-Bộ lọc loại Lyrics, karaoke, cover, reupload, fanmade, sped up, slowed, visualizer,
-official audio, live performance và remix không chính thức. Player hiển thị dấu
-**Official MV**, lượt xem và mức tăng trong 7 ngày khi đã có đủ snapshot thực tế.
+`V-Pop Trending` · `Nhạc Việt Mới` · `Đang Tăng Nhanh` · `Triệu View` · `V-Pop Hits`
 
-### Community chạy tự động
+**16 AI DJ presets**
 
-- Ghi nhận ngày gắn bó, tin nhắn và thời gian voice theo luồng nhẹ.
-- Tự mở khóa achievement và tự chọn năm huy hiệu nổi bật nhất.
-- Công bố mọi achievement tại `#celebrations`, ngoại trừ huy hiệu Thành viên mới khi vừa join.
-- Birthday Celebration, Weekly Recap và Analytics có cơ chế chống đăng trùng.
-- Control Center cho phép admin bật/tắt tính năng, chọn kênh và quyền riêng tư ngay trong `#bot-config`.
+`Trending` · `Nhạc mới` · `Hit lớn` · `Chill` · `Love` · `Tâm trạng` · `Năng lượng` ·
+`Rap Việt` · `Drill` · `Hoodtrap` · `Jerk Drill` · `Sexy Drill` · `Trap` · `Rage` ·
+`Melodic Rap` · `Hip-Hop / R&B`
 
-## Khởi động nhanh
+<details>
+<summary><strong>Official MV policy</strong></summary>
+
+Bot ưu tiên nghệ sĩ và label chính thức, lượt xem cao, bài mới và tín hiệu tăng trưởng thực.
+Các định dạng sau bị loại khỏi Radio và AI DJ:
+
+- Lyrics, karaoke và official audio
+- Cover, reupload và fanmade
+- Sped up, slowed, nightcore và visualizer
+- Live performance, bootleg, mashup và remix không chính thức
+- Video ngắn dưới 90 giây hoặc dài hơn 8 phút
+
+Tăng trưởng 7 ngày được tính từ snapshot lượt xem đã quan sát, không tạo số liệu giả.
+
+</details>
+
+### Audio và thư viện
+
+| Audio Lab | Music Library |
+|---|---|
+| Equalizer realtime không ngắt bài | Favorites và playlist cá nhân |
+| Bass Boost, 8D, Reverb | Lịch sử và thống kê nghe nhạc |
+| Nightcore, Vaporwave, Slow + Reverb | Lyrics có phân trang |
+| Khôi phục đúng vị trí sau khi đổi effect | Music Profile và yearly Wrapped |
+
+## ✦ Community System
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>Member Journey</h3>
+      Welcome Card → Introduction → Activity Profile → Achievement → Birthday → Weekly Recap
+    </td>
+    <td width="50%" valign="top">
+      <h3>Admin Journey</h3>
+      Control Center → Channel Mapping → Privacy → Analytics → Member Log → Event Insights
+    </td>
+  </tr>
+</table>
+
+- Theo dõi ngày gắn bó, tin nhắn và thời gian voice bằng batch scan nhẹ.
+- Tự mở khóa 30 achievement và tự ghim 5 huy hiệu nổi bật lên Profile Card.
+- Công bố achievement tại `#celebrations`, ngoại trừ huy hiệu thành viên mới.
+- Birthday có quyền riêng tư, bảng lời chúc phân trang và decoration riêng trên Profile Card.
+- Weekly Recap, Birthday và Analytics đều có cơ chế chống đăng trùng.
+- Heatmap, peak time, member funnel, growth, retention và Discord Event Analytics.
+- Bật/tắt tính năng, chọn kênh và privacy ngay trong `#bot-config`.
+
+## ✦ Command Deck
+
+Mọi command đều có slash form. Các thao tác gọi nhạc phù hợp vẫn hỗ trợ prefix `!`.
+
+<details open>
+<summary><strong>Music essentials</strong></summary>
+
+| Command | Công dụng |
+|---|---|
+| `/phat [tên hoặc URL]` | Phát YouTube, SoundCloud hoặc playlist. |
+| `/soundcloud <tên hoặc URL>` | Tìm trực tiếp trên SoundCloud. |
+| `/pause` · `/resume` | Tạm dừng hoặc tiếp tục. |
+| `/skip` · `/stop` | Bỏ qua hoặc kết thúc phiên nghe. |
+| `/queue` · `/shuffle` · `/clearqueue` | Quản lý hàng đợi. |
+| `/volume` · `/loop` | Âm lượng và chế độ lặp. |
+| `/radio` · `/aidj` | Radio xu hướng hoặc mix theo gu. |
+| `/equalizer` · `/hieuung` | Điều chỉnh chất âm. |
+
+</details>
+
+<details>
+<summary><strong>Library & social listening</strong></summary>
+
+| Command | Công dụng |
+|---|---|
+| `/yeuthich` · `/playlist` | Thư viện cá nhân. |
+| `/lichsu` · `/thongke` | Lịch sử và thống kê nghe. |
+| `/loibaihat` | Lời bài hát đang phát. |
+| `/party` | Listening Party trong voice channel. |
+| `/hosonhac` · `/wrapped` | Music Profile và tổng kết năm. |
+| `/congbang` · `/tuphat` | Fair Queue và Autoplay. |
+
+</details>
+
+<details>
+<summary><strong>Community & administration</strong></summary>
+
+| Command | Công dụng |
+|---|---|
+| `/hoso [thanhvien]` | Profile Card của bạn hoặc thành viên khác. |
+| `/huyhieu` · `/thanhtich` | Bộ sưu tập và tiến độ achievement. |
+| `/gioithieu` | Form giới thiệu bản thân. |
+| `/sinhnhat` · `/lichsinhnhat` | Sinh nhật và lịch cộng đồng. |
+| `/weekly` | Weekly Recap gần nhất. |
+| `/analytics` | Dashboard 7, 30 hoặc 90 ngày. |
+| `/communitysettings` | Community Control Center. |
+| `/communitysetup` · `/communitypreview` | Kiểm tra cấu hình và xem trước card. |
+| `/traohuyhieu` | Trao achievement đặc biệt. |
+| `/help` | Trợ giúp nhanh. |
+
+</details>
+
+## ✦ Khởi động
 
 ### Yêu cầu
 
-- Python `3.11+`
-- FFmpeg trong `PATH`, hoặc khai báo `FFMPEG_BINARY`
-- Discord bot token
-- `Message Content Intent` nếu sử dụng lệnh tiền tố `!`
-- `Server Members Intent` cho Welcome, Member Log và hồ sơ thành viên
+`Python 3.11+` · `FFmpeg` · Discord bot token · `Message Content Intent` · `Server Members Intent`
 
-### Windows
+<details open>
+<summary><strong>Windows</strong></summary>
 
 ```powershell
 git clone https://github.com/peaceful-fptu-k16/KSCSupport.git
 cd KSCSupport
 ./setup.bat
-```
 
-Mở `.env`, điền token và chạy:
-
-```powershell
 venv\Scripts\activate
 python bot.py
 ```
 
-### Linux / VPS
+</details>
+
+<details>
+<summary><strong>Linux / VPS</strong></summary>
 
 ```bash
 git clone https://github.com/peaceful-fptu-k16/KSCSupport.git
 cd KSCSupport
 chmod +x setup.sh
 ./setup.sh
+
 source venv/bin/activate
 python bot.py
 ```
 
-Khi bot sẵn sàng, log sẽ có `Connected as ...` và số slash command đã đồng bộ.
-Đặt `DISCORD_GUILD_ID` để dùng một bộ guild command xuất hiện gần như ngay lập tức
-trong máy chủ chính. Khi có giá trị này, bot tự xóa bản global cũ để Discord không hiển thị
-command trùng lặp. Bỏ trống biến nếu muốn triển khai bot bằng global command cho nhiều server.
+</details>
 
-## Cấu hình
+Khi sẵn sàng, log hiển thị `Connected as ...` và số slash command đã đồng bộ.
+Đặt `DISCORD_GUILD_ID` để command xuất hiện gần như ngay lập tức tại server chính;
+bot sẽ xóa bản global cũ nhằm tránh command trùng.
 
-Sao chép `.env.example` thành `.env`. Không commit token hoặc webhook URL lên Git.
+## ✦ Configuration
 
-| Biến | Bắt buộc | Mặc định | Mục đích |
-|---|:---:|---|---|
-| `DISCORD_BOT_TOKEN` | Có | — | Token đăng nhập Discord bot. |
-| `DISCORD_GUILD_ID` | Nên có | — | Dùng guild-only command nhanh và không trùng trong server chính. |
-| `BOT_PREFIX` | Không | `!` | Tiền tố cho hybrid command. |
-| `BOT_BRAND_NAME` | Không | `KSC Gaming` | Tên thương hiệu dùng trên toàn bộ UI. |
-| `BOT_MASCOT_PATH` | Không | `docs/assets/ksc-mascot.png` | Mascot toàn thân dùng cho bot, webhook và card. |
-| `SYNC_BRAND_AVATARS` | Không | `true` | Tự đồng bộ avatar bot và webhook khi khởi động. |
-| `LOG_LEVEL` | Không | `INFO` | Mức log của ứng dụng. |
-| `PLAYER_REFRESH_SECONDS` | Không | `30` | Chu kỳ cập nhật player, tối thiểu 15 giây. |
-| `MUSIC_DATABASE_PATH` | Không | `data/music.db` | SQLite cho thư viện và lịch sử nhạc. |
-| `COMMUNITY_DATABASE_PATH` | Không | `data/community.db` | SQLite cho hồ sơ và analytics. |
-| `FFMPEG_BINARY` | Không | Tự dò | Đường dẫn tới FFmpeg khi không có trong `PATH`. |
-| `YTDLP_COOKIE_FILE` | Không | — | Cookie Netscape cho nội dung YouTube bị giới hạn. |
+Sao chép `.env.example` thành `.env`. Không commit token, cookie hoặc webhook URL.
+
+| Biến | Mặc định | Vai trò |
+|---|---|---|
+| `DISCORD_BOT_TOKEN` | Bắt buộc | Token đăng nhập bot. |
+| `DISCORD_GUILD_ID` | Trống | Guild-only command sync. |
+| `BOT_PREFIX` | `!` | Prefix cho hybrid command. |
+| `BOT_BRAND_NAME` | `KSC Gaming` | Tên thương hiệu toàn hệ thống. |
+| `BOT_MASCOT_PATH` | `docs/assets/ksc-mascot.png` | Mascot cho bot, webhook và card. |
+| `SYNC_BRAND_AVATARS` | `true` | Đồng bộ avatar khi khởi động. |
+| `FFMPEG_BINARY` | Tự dò | Đường dẫn FFmpeg tùy chỉnh. |
+| `YTDLP_COOKIE_FILE` | Trống | Cookie Netscape cho YouTube giới hạn. |
+| `MUSIC_DATABASE_PATH` | `data/music.db` | Music library và history. |
+| `COMMUNITY_DATABASE_PATH` | `data/community.db` | Profile và analytics. |
 
 <details>
-<summary><strong>Cấu hình Now Playing webhook</strong></summary>
+<summary><strong>Now Playing webhook</strong></summary>
 
-| Biến | Mục đích |
+| Biến | Vai trò |
 |---|---|
 | `DISCORD_NOW_PLAYING_WEBHOOK_URL` | Webhook nhận card bài đang phát. |
 | `NOW_PLAYING_WEBHOOK_NAME` | Tên webhook, mặc định `KSC Music`. |
-| `NOW_PLAYING_WEBHOOK_GUILD_ID` | Server cung cấp avatar cho webhook. |
-| `NOW_PLAYING_WEBHOOK_REFRESH_SECONDS` | Chu kỳ cập nhật card. |
+| `NOW_PLAYING_WEBHOOK_GUILD_ID` | Server cung cấp avatar. |
+| `NOW_PLAYING_WEBHOOK_REFRESH_SECONDS` | Chu kỳ cập nhật tiến trình. |
 
-Bot giữ một message duy nhất, cập nhật tiến trình và tự đưa message xuống cuối khi cần.
+Webhook giữ một message duy nhất và tự đưa message xuống cuối khi cần.
 
 </details>
 
 <details>
-<summary><strong>Cấu hình Server Guide webhook</strong></summary>
+<summary><strong>Server Guide webhook</strong></summary>
 
-| Biến | Mục đích |
+| Biến | Vai trò |
 |---|---|
-| `DISCORD_SERVER_GUIDE_WEBHOOK_URL` | Webhook hiển thị giới thiệu, bản đồ kênh và rules. |
+| `DISCORD_SERVER_GUIDE_WEBHOOK_URL` | Giới thiệu server, bản đồ kênh và rules. |
 | `SERVER_GUIDE_WEBHOOK_NAME` | Tên webhook, mặc định `KSC Gaming`. |
-| `SERVER_GUIDE_WEBHOOK_GUILD_ID` | Server cung cấp avatar cho webhook. |
-| `SERVER_GUIDE_BUMP_DELAY_SECONDS` | Thời gian chờ trước khi đưa guide xuống cuối. |
+| `SERVER_GUIDE_WEBHOOK_GUILD_ID` | Server cung cấp avatar. |
+| `SERVER_GUIDE_BUMP_DELAY_SECONDS` | Thời gian chờ trước khi bump guide. |
 
 </details>
 
-## Lệnh
+## ✦ Discord Layout
 
-Tất cả command đều hỗ trợ dạng slash `/command`. Những command phù hợp còn có thể dùng
-với tiền tố `!command`.
-
-### Phát và điều khiển
-
-| Lệnh | Công dụng |
-|---|---|
-| `/phat [tên hoặc URL]` | Tìm hoặc phát YouTube, SoundCloud và playlist. |
-| `/soundcloud <tên hoặc URL>` | Tìm và phát trực tiếp từ SoundCloud. |
-| `/pause` · `/resume` | Tạm dừng hoặc tiếp tục. |
-| `/skip` · `/stop` | Bỏ qua bài hoặc dừng và rời voice. |
-| `/nowplaying` | Xem bài đang phát. |
-| `/volume <0-100>` | Đặt âm lượng. |
-| `/queue` · `/shuffle` · `/clearqueue` | Xem, trộn hoặc xóa hàng đợi. |
-| `/loop <off\|track\|queue>` | Chọn chế độ lặp. |
-| `/congbang [on\|off]` | Luân phiên bài giữa những người yêu cầu. |
-| `/tuphat [on\|off]` | Tự thêm bài liên quan khi hàng đợi trống. |
-
-### Audio và thư viện
-
-| Lệnh | Công dụng |
-|---|---|
-| `/hieuung [preset]` | Mở bảng hiệu ứng âm thanh. |
-| `/equalizer [preset]` | Đổi EQ realtime mà không ngắt bài. |
-| `/loibaihat` | Xem lời bài đang phát. |
-| `/yeuthich` · `/playlist` | Mở thư viện cá nhân. |
-| `/lichsu` · `/thongke` | Xem lịch sử và thống kê nghe nhạc. |
-| `/radio` | Mở 5 đài V-Pop Official MV theo xu hướng, độ mới, tăng trưởng và lượt xem. |
-| `/aidj` | Tạo mix Official MV theo genre, vibe, độ trend và độ mới cá nhân. |
-| `/party` | Mở Listening Party trong voice channel. |
-| `/hosonhac` · `/wrapped` | Xem hồ sơ và tổng kết âm nhạc. |
-
-### Community
-
-| Lệnh | Công dụng |
-|---|---|
-| `/hoso [thanhvien]` | Xem Profile Card của bạn hoặc một thành viên khác. |
-| `/huyhieu` · `/thanhtich` | Xem bộ sưu tập và tiến độ achievement. |
-| `/gioithieu` | Mở form giới thiệu bản thân. |
-| `/sinhnhat` · `/lichsinhnhat` | Cập nhật hoặc xem lịch sinh nhật. |
-| `/weekly` | Xem Weekly Recap gần nhất. |
-| `/traohuyhieu` | Trao huy hiệu đặc biệt, yêu cầu Manage Server. |
-| `/analytics` | Mở dashboard 7/30/90 ngày, yêu cầu Manage Server. |
-| `/communitysettings` | Mở Community Control Center. |
-| `/communitysetup` | Kiểm tra cấu hình kênh Community. |
-| `/communitypreview` | Xem trước Welcome, Birthday, Profile và Introduction card. |
-| `/help` | Hiển thị trợ giúp nhanh. |
-
-Ví dụ:
+Bot tự nhận diện tên kênh ngay cả khi có emoji đứng trước.
 
 ```text
-/phat Đường tôi chở em về
-/phat https://www.youtube.com/watch?v=...
-/phat https://soundcloud.com/artist/track
-/equalizer vocal
-```
-
-## Kênh Discord đề xuất
-
-Bot tự nhận diện tên kênh kể cả khi có emoji đứng trước.
-
-```text
-WELCOME
-├── welcome
-├── announcements
-├── introductions
-└── rules
-
-COMMUNITY
-├── gossip
-├── music
-├── celebrations
-├── events
-└── weekly-recap
+WELCOME                         COMMUNITY
+├── welcome                     ├── gossip
+├── announcements               ├── music
+├── introductions               ├── celebrations
+└── rules                       ├── events
+                                └── weekly-recap
 
 STAFF
 ├── community-analytics
@@ -257,96 +339,112 @@ STAFF
 └── bot-config
 ```
 
-| Kênh | Nội dung |
+| Kênh | Bot đăng gì tại đây? |
 |---|---|
 | `welcome` | Welcome Card và hướng dẫn thành viên mới. |
-| `introductions` | Bài giới thiệu được gửi từ modal. |
-| `celebrations` | Sinh nhật và achievement quan trọng. |
-| `weekly-recap` | Báo cáo tuần tự động gồm bảy trang. |
+| `introductions` | Bài giới thiệu gửi từ modal. |
+| `celebrations` | Birthday và achievement tự động. |
+| `weekly-recap` | Báo cáo tuần bảy trang. |
 | `community-analytics` | Dashboard tăng trưởng và hoạt động. |
-| `member-log` | Thành viên rời server và số liệu theo quyền riêng tư. |
-| `bot-config` | Control Center chỉ dành cho quản trị viên. |
+| `member-log` | Join, leave và thay đổi thành viên phù hợp privacy. |
+| `bot-config` | Control Center dành cho quản trị viên. |
 
-## Kiến trúc
+## ✦ Architecture
+
+```text
+Discord Gateway
+      │
+      ├── Music Cog ─────► GuildPlayerSession ─────► Voice / FFmpeg
+      │      │                    │
+      │      ├── Discovery       └── Music SQLite
+      │      └── Components V2
+      │
+      ├── Community Cog ─► Schedulers / Events ───► Community SQLite
+      │      │
+      │      └── Cards / Views / Analytics
+      │
+      └── Brand Layer ───► Bot avatar / Webhooks / Mascot
+```
+
+<details>
+<summary><strong>Source map</strong></summary>
 
 ```text
 KSCSupport/
 ├── bot.py                      Entry point, intents và command sync
-├── branding.py                 Nhận diện KSC Gaming tập trung
+├── branding.py                 KSC identity và avatar sync
 ├── cogs/
 │   ├── music.py                Music commands và interaction flow
-│   └── community.py            Community events, jobs và commands
+│   └── community.py            Events, schedulers và admin commands
 ├── music/
-│   ├── extractor.py            yt-dlp, metadata và stream resolution
+│   ├── discovery.py            V-Pop policy, ranking và anti-repeat
+│   ├── extractor.py            yt-dlp metadata và stream resolution
 │   ├── player.py               Voice lifecycle và race protection
 │   ├── repository.py           Music library SQLite
-│   ├── effects.py              Effects và equalizer presets
-│   ├── webhook.py              Fixed Now Playing webhook
-│   └── ui/                     Player, queue, search, library, cards
+│   └── ui/                     Player, queue, search, library và cards
 ├── community/
+│   ├── achievements.py         Achievement catalog và ranking
 │   ├── repository.py           Profile, birthday và analytics SQLite
-│   ├── achievements.py         Achievement rules và featured ranking
-│   ├── cards.py                PNG/GIF renderer
+│   ├── cards.py                PNG / animated GIF renderer
 │   ├── guide_webhook.py        Fixed Server Guide webhook
 │   └── ui.py                   Views, modals và dashboards
-├── docs/assets/                README media và mascot
-├── scripts/                    Công cụ dựng asset dự án
+├── docs/assets/                Mascot và product media
+├── scripts/                    Asset build tools
 └── tests/                      Unit và behavior tests
 ```
 
-Mỗi server có một `GuildPlayerSession`. Yêu cầu thêm nhạc được xử lý theo thứ tự nhận;
-`generation` token ngăn audio cũ quay lại sau `stop` hoặc disconnect. Equalizer hoạt động
-trực tiếp trên PCM, trong khi hiệu ứng thay đổi tempo hoặc không gian được nối lại tại
-đúng vị trí hiện tại bằng FFmpeg.
+</details>
 
-## Dữ liệu và quyền riêng tư
+Mỗi server sở hữu một `GuildPlayerSession`. `generation` token ngăn audio cũ quay lại
+sau `stop` hoặc disconnect. Equalizer chạy trực tiếp trên PCM; effect thay đổi tempo hoặc
+không gian sẽ nối lại bằng FFmpeg tại đúng vị trí đang nghe.
 
-- Dữ liệu nằm cục bộ trong `data/music.db` và `data/community.db`.
-- Sinh nhật chỉ lưu ngày/tháng, không yêu cầu năm sinh.
-- Thành viên có thể chọn công khai, chỉ ngày hoặc ẩn sinh nhật.
-- Webhook URL và bot token chỉ được lưu trong `.env`.
-- Analytics tổng hợp hoạt động server; bot không lưu nội dung tin nhắn.
+## ✦ Privacy & Quality
 
-## Kiểm thử
+| Privacy | Quality gate |
+|---|---|
+| Dữ liệu nằm cục bộ trong SQLite. | 79 unit và behavior tests. |
+| Sinh nhật chỉ lưu ngày và tháng. | Queue concurrency và race-condition coverage. |
+| Thành viên tự chọn mức công khai. | Card render được kiểm tra kích thước và định dạng. |
+| Không lưu nội dung tin nhắn. | Discovery dùng số liệu quan sát thực. |
+| Secret chỉ nằm trong `.env`. | Slash command được chống đăng ký trùng. |
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-Bộ test hiện kiểm tra state machine, queue concurrency, player race conditions,
-metadata, library, webhook, Community repository, achievement và card rendering.
-
-## Xử lý sự cố
+## ✦ Troubleshooting
 
 <details>
 <summary><strong>Slash command chưa xuất hiện</strong></summary>
 
-Điền đúng `DISCORD_GUILD_ID`, khởi động lại bot và kiểm tra log `Synced ... guild slash commands`.
-Đảm bảo bot được mời với scope `bot` và `applications.commands`.
+Kiểm tra `DISCORD_GUILD_ID`, khởi động lại bot và tìm log
+`Synced ... guild slash commands`. Bot cần scope `bot` và `applications.commands`.
 
 </details>
 
 <details>
 <summary><strong>Bot vào voice nhưng không phát nhạc</strong></summary>
 
-Kiểm tra FFmpeg, quyền `Connect`/`Speak`, dependency voice và log lỗi. Trên Windows có
-thể đặt đường dẫn đầy đủ bằng `FFMPEG_BINARY=C:\ffmpeg\bin\ffmpeg.exe`.
+Kiểm tra quyền `Connect` / `Speak`, FFmpeg và dependency voice. Trên Windows có thể đặt
+đường dẫn đầy đủ bằng `FFMPEG_BINARY=C:\ffmpeg\bin\ffmpeg.exe`.
 
 </details>
 
 <details>
-<summary><strong>YouTube yêu cầu xác minh hoặc cookie</strong></summary>
+<summary><strong>YouTube yêu cầu xác minh</strong></summary>
 
-Xuất cookie theo định dạng Netscape vào file cục bộ và khai báo `YTDLP_COOKIE_FILE`.
-Không commit file cookie lên repository.
+Xuất cookie Netscape vào file cục bộ và khai báo `YTDLP_COOKIE_FILE`.
+Không commit cookie vào repository.
 
 </details>
 
 ---
 
 <div align="center">
-  <img src="docs/assets/ksc-mascot.png" width="110" alt="KSC Gaming mascot waving" />
+  <img src="docs/assets/ksc-mascot.png" width="120" alt="KSC Gaming mascot" />
   <br />
-  <strong>Built for KSC Gaming</strong><br />
-  Âm nhạc gọn gàng. Cộng đồng sống động. Vận hành trong Discord.
+  <strong>KSC Gaming</strong>
+  <br />
+  <sub>Music that moves. Community that stays.</sub>
 </div>
