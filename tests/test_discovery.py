@@ -6,6 +6,8 @@ from music.discovery import (
     RADIO_PRESETS,
     custom_ai_preset,
     discovery_score,
+    discovery_queries,
+    has_producer_credit,
     is_discovery_candidate,
     is_urban_candidate,
     rank_discovery_tracks,
@@ -90,7 +92,8 @@ class DiscoveryPolicyTests(unittest.TestCase):
         self.assertEqual(preset.freshness, "new")
         self.assertEqual(preset.trend, "popular")
         self.assertEqual(preset.source_policy, "urban")
-        self.assertEqual(len(AI_PRESETS), 16)
+        self.assertEqual(len(AI_PRESETS), 17)
+        self.assertEqual(AI_PRESETS["jersey"].source_policy, "urban")
 
     def test_urban_policy_accepts_remix_without_official_mv(self) -> None:
         remix = track("Rap Việt Hoodtrap Remix", "Producer Việt Nam")
@@ -99,6 +102,35 @@ class DiscoveryPolicyTests(unittest.TestCase):
         ranked = rank_discovery_tracks([remix], AI_PRESETS["hoodtrap"], limit=1)
         self.assertEqual(ranked, [remix])
         self.assertFalse(ranked[0].is_official)
+
+    def test_urban_ranking_prioritizes_low_view_producer_credit(self) -> None:
+        producer_track = track(
+            "SAIGON HOODTRAP (prod. Kewtiie)",
+            "Underground Artist Việt Nam",
+            views=20_000,
+        )
+        popular_track = track(
+            "SAIGON HOODTRAP",
+            "Popular Artist Việt Nam",
+            views=10_000_000,
+        )
+
+        ranked = rank_discovery_tracks(
+            [popular_track, producer_track],
+            AI_PRESETS["hoodtrap"],
+            limit=2,
+            artist_gap=1,
+        )
+
+        self.assertTrue(has_producer_credit(producer_track))
+        self.assertFalse(has_producer_credit(popular_track))
+        self.assertEqual(ranked[0], producer_track)
+
+    def test_urban_queries_search_for_producer_credits(self) -> None:
+        queries = discovery_queries(AI_PRESETS["drill"])
+
+        self.assertTrue(any('"prod."' in query for query in queries))
+        self.assertTrue(any('"prod by"' in query for query in queries))
 
     def test_urban_policy_still_rejects_low_quality_formats(self) -> None:
         for title in (

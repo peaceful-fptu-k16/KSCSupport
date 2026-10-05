@@ -137,9 +137,13 @@ class MediaExtractor:
         *,
         profile: AudioProfile = AudioProfile(),
         seek_seconds: int = 0,
+        extra_filter: str = "",
     ) -> discord.AudioSource:
+        filters = ",".join(
+            item for item in (profile.ffmpeg_filter_chain, extra_filter) if item
+        )
         if track.source is TrackSource.YOUTUBE:
-            ffmpeg = self._youtube_pipe(track, profile, seek_seconds)
+            ffmpeg = self._youtube_pipe(track, filters, seek_seconds)
             equalized = DynamicEqualizerAudio(ffmpeg, profile.equalizer)
             return discord.PCMVolumeTransformer(equalized, volume=volume)
 
@@ -155,7 +159,7 @@ class MediaExtractor:
             stream_url,
             executable=get_ffmpeg_executable(),
             before_options=build_before_options(seek_seconds),
-            options=build_ffmpeg_options(profile.ffmpeg_filter_chain),
+            options=build_ffmpeg_options(filters),
         )
         equalized = DynamicEqualizerAudio(ffmpeg, profile.equalizer)
         return discord.PCMVolumeTransformer(equalized, volume=volume)
@@ -163,7 +167,7 @@ class MediaExtractor:
     def _youtube_pipe(
         self,
         track: Track,
-        profile: AudioProfile,
+        audio_filter: str,
         seek_seconds: int,
     ) -> PipedFFmpegAudio:
         command = [
@@ -209,7 +213,7 @@ class MediaExtractor:
                 downloader,
                 executable=get_ffmpeg_executable(),
                 before_options=before_options,
-                options=build_ffmpeg_options(profile.ffmpeg_filter_chain),
+                options=build_ffmpeg_options(audio_filter),
             )
         except Exception:
             if downloader.stdout:

@@ -212,7 +212,7 @@ class DiscoveryView(discord.ui.View):
             inline=True,
         )
         filter_text = (
-            "Không cover · reupload · fanmade · sped-up/slowed · bản kéo dài"
+            "Ưu tiên title có prod./prod by · Không cover, reupload, fanmade, sped-up/slowed"
             if preset.source_policy == "urban"
             else "Không lyrics · cover · reupload · unofficial remix"
         )
@@ -243,16 +243,19 @@ class DiscoveryView(discord.ui.View):
         await interaction.response.defer(ephemeral=True, thinking=True)
         try:
             tracks = self.preview_tracks or await self._generate(interaction)
+            session = self.ui.manager.session(self.guild_id)
+            await session.set_mix_policy(self.preset)
+            await session.set_smart_reorder(True)
+            await session.set_dj_mix(True)
             await _enqueue_for_interaction(self.ui, interaction, tracks)
             if self.mode == "radio":
-                session = self.ui.manager.session(self.guild_id)
                 await session.set_radio_policy(self.preset)
                 await session.set_autoplay(True)
             await self.ui.render(self.guild_id)
         except MusicError as error:
             await interaction.followup.send(error.message, ephemeral=True)
             return
-        suffix = "Radio đã bật" if self.mode == "radio" else "AI DJ đã tạo phiên nghe"
+        suffix = "Radio + DJ Mix đã bật" if self.mode == "radio" else "AI DJ Mix đã tạo phiên nghe"
         await interaction.followup.send(
             f"{suffix} **{self.preset.label}** với **{len(tracks)} bài**.",
             ephemeral=True,

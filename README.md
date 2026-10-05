@@ -21,7 +21,7 @@
     <img src="https://img.shields.io/badge/discord.py-2.7+-5865F2?style=flat-square&logo=discord&logoColor=white" alt="discord.py 2.7+" />
     <img src="https://img.shields.io/badge/YouTube-supported-FF0033?style=flat-square&logo=youtube&logoColor=white" alt="YouTube supported" />
     <img src="https://img.shields.io/badge/SoundCloud-supported-FF5500?style=flat-square&logo=soundcloud&logoColor=white" alt="SoundCloud supported" />
-    <img src="https://img.shields.io/badge/tests-79%20passing-2CB67D?style=flat-square" alt="79 tests passing" />
+    <img src="https://img.shields.io/badge/tests-107%20passing-2CB67D?style=flat-square" alt="107 tests passing" />
   </p>
 </div>
 
@@ -30,10 +30,10 @@
 ## ✨ Tổng quan
 
 <p align="center">
-  <img src="https://img.shields.io/badge/39-SLASH_COMMANDS-7DD3FC?style=for-the-badge&labelColor=172033" alt="39 slash commands" />
+  <img src="https://img.shields.io/badge/41-SLASH_COMMANDS-7DD3FC?style=for-the-badge&labelColor=172033" alt="41 slash commands" />
   <img src="https://img.shields.io/badge/30-ACHIEVEMENTS-F9A8D4?style=for-the-badge&labelColor=172033" alt="30 achievements" />
   <img src="https://img.shields.io/badge/5-V--POP_RADIOS-6EE7B7?style=for-the-badge&labelColor=172033" alt="5 V-Pop radios" />
-  <img src="https://img.shields.io/badge/16-AI_DJ_PRESETS-C4B5FD?style=for-the-badge&labelColor=172033" alt="16 AI DJ presets" />
+  <img src="https://img.shields.io/badge/17-AI_DJ_PRESETS-C4B5FD?style=for-the-badge&labelColor=172033" alt="17 AI DJ presets" />
 </p>
 
 <table>
@@ -107,6 +107,7 @@
 - Tin nhắn gọi nhạc được xóa sau khi xử lý.
 - Một Player công khai được cập nhật tại chỗ; webhook tự trở lại cuối kênh khi cần.
 - Thumbnail, waveform, progress, volume, loop, queue và audio profile cùng một UI.
+- BPM, Camelot key, energy và vocal activity tự cập nhật ngay trên Player card.
 - YouTube được pipe thẳng từ `yt-dlp` sang FFmpeg.
 
 | | 📻 **Radio** | ✨ **AI DJ** |
@@ -115,11 +116,30 @@
 | Điều khiển | Bot tự chọn | Genre, vibe, trend và độ mới |
 | Kết quả | 12 bài, tiếp tục tự động | Mix 18 bài |
 | Chống lặp | URL và nghệ sĩ gần đây | Loại trùng trong mix |
+| Chuyển bài | DJ Mix, crossfade và cân âm lượng | Tự động phân tích BPM và beatmatch an toàn |
 
 **Radio:** `Trending` · `Nhạc Việt Mới` · `Đang Tăng Nhanh` · `Triệu View` · `V-Pop Hits`
 
-**AI DJ:** `Chill` · `Love` · `Năng lượng` · `Rap Việt` · `Drill` · `Hoodtrap` ·
+**AI DJ:** `Chill` · `Love` · `Năng lượng` · `Rap Việt` · `Drill` · `Hoodtrap` · `Jersey` ·
 `Trap` · `Rage` · `Melodic Rap` · `Hip-Hop / R&B` và nhiều preset khác.
+
+Các preset Urban ưu tiên title có credit `prod.`, `prod by` hoặc `produced by`; lượt view thấp
+không còn khiến track producer-led bị chìm dưới các kết quả phổ biến.
+
+### Auto DJ transition engine
+
+- Radio và AI DJ tự bật `DJ Mix`; hàng đợi thường có thể dùng `/djmix on`.
+- Bài kế tiếp được prefetch, cân loudness và trộn trực tiếp ở tầng PCM nên voice không bị ngắt.
+- `librosa` phân tích BPM, beat confidence và loudness một lần, sau đó cache tại `data/autodj.db`.
+- V2 lưu beat-grid, căn điểm vào bài kế tiếp tại đầu phrase 4 ô nhịp và tự quy đổi khi đổi tốc độ.
+- V3 phân tích key/mode, harmonic confidence, energy và vocal activity để tránh chồng lời.
+- V4 chấm điểm transition và tự chọn beatmatch, vocal-safe, harmonic fade hoặc energy fade.
+- V5 nhận diện intro, drop, outro và downbeat; Smart Order chấm BPM, key, energy, genre và popularity.
+- Radio/AI DJ tự bật Smart Order; queue thủ công chỉ đổi thứ tự khi người dùng chủ động bật.
+- Transition không được bắt đầu trước 90% duration còn lại; EOF sớm sẽ reconnect đúng timestamp thay vì nhảy bài.
+- PCM mixer dùng equal-power curve để giữ cảm giác âm lượng ổn định trong lúc chuyển bài.
+- Beatmatch dài chỉ hoạt động khi BPM, hòa âm và confidence phù hợp; trường hợp còn lại dùng fade ngắn an toàn.
+- Skip, Stop, Play Now, Loop, EQ và đổi volume đều hủy hoặc dựng lại transition an toàn.
 
 ### Official MV policy
 
@@ -193,6 +213,8 @@ Mọi command đều có slash form. Các thao tác gọi nhạc phù hợp vẫ
 | `/party` | Listening Party trong voice channel. |
 | `/hosonhac` · `/wrapped` | Music Profile và tổng kết năm. |
 | `/congbang` · `/tuphat` | Fair Queue và Autoplay. |
+| `/djmix on\|off` | Crossfade, cân loudness và căn BPM tự động. |
+| `/smartorder on\|off` | Tối ưu cửa sổ bài kế tiếp theo chất lượng mix. |
 
 </details>
 
@@ -267,6 +289,18 @@ Sao chép `.env.example` thành `.env`. Không commit token, cookie hoặc webho
 | `SYNC_BRAND_AVATARS` | `true` | Đồng bộ avatar khi khởi động. |
 | `FFMPEG_BINARY` | Tự dò | Đường dẫn FFmpeg tùy chỉnh. |
 | `YTDLP_COOKIE_FILE` | Trống | Cookie Netscape cho YouTube giới hạn. |
+| `DJ_CROSSFADE_SECONDS` | `6` | Thời gian crossfade mục tiêu, giới hạn 2–12 giây. |
+| `DJ_PHRASE_BARS` | `4` | Số ô nhịp mục tiêu cho một transition beatmatch. |
+| `DJ_VOCAL_THRESHOLD` | `0.72` | Ngưỡng chuyển sang vocal-safe fade ngắn. |
+| `DJ_ENERGY_DELTA_THRESHOLD` | `0.42` | Chênh lệch energy tối đa trước khi dùng energy fade. |
+| `DJ_ANALYSIS_SECONDS` | `75` | Độ dài mẫu dùng để phân tích BPM. |
+| `DJ_ANALYSIS_ENABLED` | `true` | Bật cache phân tích `librosa`; tắt vẫn giữ crossfade. |
+| `DJ_STRUCTURE_ENABLED` | `true` | Phân tích intro, drop, outro và downbeat. |
+| `DJ_STRUCTURE_MAX_SECONDS` | `360` | Giới hạn thời lượng structural analysis. |
+| `DJ_SMART_REORDER_WINDOW` | `4` | Số bài kế tiếp được Smart Order cân nhắc. |
+| `DJ_SMART_REORDER_MIN_GAIN` | `0.08` | Mức cải thiện tối thiểu trước khi đổi thứ tự. |
+| `DJ_MIN_PLAYBACK_RATIO` | `0.90` | Không cho transition bắt đầu trước vùng cuối của source. |
+| `DJ_EARLY_EOF_TOLERANCE_SECONDS` | `15` | Ngưỡng nhận diện stream kết thúc bất thường để reconnect. |
 | `MUSIC_DATABASE_PATH` | `data/music.db` | Music library và history. |
 | `COMMUNITY_DATABASE_PATH` | `data/community.db` | Profile và analytics. |
 
@@ -378,7 +412,7 @@ không gian sẽ nối lại bằng FFmpeg tại đúng vị trí đang nghe.
 
 | Privacy | Quality gate |
 |---|---|
-| Dữ liệu nằm cục bộ trong SQLite. | 79 unit và behavior tests. |
+| Dữ liệu nằm cục bộ trong SQLite. | 107 unit và behavior tests. |
 | Sinh nhật chỉ lưu ngày và tháng. | Queue concurrency và race-condition coverage. |
 | Thành viên tự chọn mức công khai. | Card render được kiểm tra kích thước và định dạng. |
 | Không lưu nội dung tin nhắn. | Discovery dùng số liệu quan sát thực. |

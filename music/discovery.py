@@ -51,6 +51,7 @@ AI_PRESETS = {
     "drill": DiscoveryPreset("drill", "Drill", "🖤", "Rap Việt drill remix hot", 0x94A3B8, source_policy="urban"),
     "hoodtrap": DiscoveryPreset("hoodtrap", "Hoodtrap", "🏙️", "Rap Việt hoodtrap remix hot", 0x7DD3FC, source_policy="urban"),
     "jerk_drill": DiscoveryPreset("jerk_drill", "Jerk Drill", "⚡", "Rap Việt jerk drill remix", 0xFDE68A, source_policy="urban"),
+    "jersey": DiscoveryPreset("jersey", "Jersey", "🏁", "Jersey club Việt Nam remix", 0x34D399, source_policy="urban"),
     "sexy_drill": DiscoveryPreset("sexy_drill", "Sexy Drill", "💜", "Rap Việt sexy drill remix", 0xC4B5FD, source_policy="urban"),
     "trap": DiscoveryPreset("trap", "Trap", "🔊", "Rap Việt trap remix hot", 0xF97316, source_policy="urban"),
     "rage": DiscoveryPreset("rage", "Rage", "🧨", "Rap Việt rage remix hot", 0xEF4444, source_policy="urban"),
@@ -71,6 +72,10 @@ URBAN_REJECT_PATTERN = re.compile(
     r"\b(karaoke|cover|re-?upload|fan\s?made|sped\s?up|speed\s?up|"
     r"slowed(?:\s*\+\s*reverb)?|nightcore|vietsub|unofficial|"
     r"dance practice|live performance|full album|mixtape)\b",
+    re.IGNORECASE,
+)
+PRODUCER_CREDIT_PATTERN = re.compile(
+    r"(?:\(|\[|\b)(?:prod(?:uced)?\.?\s*(?:by)?|production\s+by)\b",
     re.IGNORECASE,
 )
 OFFICIAL_MV_PATTERN = re.compile(
@@ -142,6 +147,11 @@ def is_urban_candidate(track: Track) -> bool:
     )
 
 
+def has_producer_credit(track: Track) -> bool:
+    """Detect producer-led Urban releases, including '(prod. Name)' credits."""
+    return bool(PRODUCER_CREDIT_PATTERN.search(track.title))
+
+
 def matches_preset_policy(track: Track, preset: DiscoveryPreset) -> bool:
     if preset.source_policy == "urban":
         return is_urban_candidate(track)
@@ -206,6 +216,11 @@ def rank_discovery_tracks(
         enumerate(candidates),
         key=lambda pair: (
             discovery_score(pair[1], preset)
+            + (
+                24.0
+                if preset.source_policy == "urban" and has_producer_credit(pair[1])
+                else 0.0
+            )
             + (max(0.0, 12.0 - pair[0] * 0.6) if preset.freshness == "new" else 0.0)
         ),
         reverse=True,
@@ -234,9 +249,9 @@ def discovery_queries(preset: DiscoveryPreset) -> list[str]:
     year = datetime.now(timezone.utc).year
     if preset.source_policy == "urban":
         return [
-            f"{preset.query} {year}",
-            f"{preset.query} nghệ sĩ producer Việt Nam",
-            f"{preset.query} audio visualizer music video",
+            f'{preset.query} "prod." {year}',
+            f'{preset.query} "prod by" Việt Nam',
+            f"{preset.query} producer nghệ sĩ Việt Nam",
         ]
     return [
         f"{preset.query} {year}",

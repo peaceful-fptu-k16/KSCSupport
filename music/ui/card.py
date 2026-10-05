@@ -178,7 +178,25 @@ class PlayerCardRenderer:
             fill=SECONDARY,
             min_size=16,
         )
-        draw.text((x, 551), f"{len(snapshot.queue)} bài đang chờ", font=self._font(18), fill=MUTED)
+        telemetry = [f"{len(snapshot.queue)} BÀI ĐANG CHỜ"]
+        if snapshot.analysis:
+            telemetry.append(f"{round(snapshot.analysis.bpm)} BPM")
+            if snapshot.analysis.key != "--":
+                telemetry.append(snapshot.analysis.key)
+            telemetry.append(f"ENERGY {round(snapshot.analysis.energy * 100)}%")
+            telemetry.append(f"VOCAL {round(snapshot.analysis.vocal_activity * 100)}%")
+        elif snapshot.analysis_pending:
+            telemetry.append("ANALYZING AUDIO...")
+        self._draw_fitted(
+            draw,
+            "  ·  ".join(telemetry),
+            (x, 551),
+            570,
+            18,
+            bold=True,
+            fill=MUTED,
+            min_size=13,
+        )
         status = []
         if track.is_official:
             status.append("OFFICIAL MV")

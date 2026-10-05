@@ -6,6 +6,8 @@ import subprocess
 import sys
 import threading
 from array import array
+from collections.abc import Callable
+from typing import Any, Optional
 
 import discord
 
@@ -20,6 +22,208 @@ DEFAULT_USER_AGENT = (
 
 FFMPEG_BEFORE_OPTIONS = "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"
 FFMPEG_OPTIONS = "-vn"
+
+
+class CrossfadeAudio(discord.AudioSource):
+    """Mixes consecutive PCM sources without stopping Discord voice playback."""
+
+    FRAME_SIZE = 3840
+    FRAMES_PER_SECOND = 50
+
+    def __init__(
+        self,
+        original: discord.AudioSource,
+        *,
+        duration: Optional[int],
+        on_transition: Callable[[Any, float], None],
+    ) -> None:
+        self.original = original
+        self.duration = duration
+        self.on_transition = on_transition
+        self._next: Optional[discord.AudioSource] = None
+        self._next_payload: Any = None
+        self._next_duration: Optional[int] = None
+        self._frames_played = 0
+        self._transition_start = 0
+        self._transition_frames = 0
+        self._next_frames_read = 0
+        self._mix_curve = "equal_power"
+        self._premature_end = False
+        self._lock = threading.RLock()
+        self._cleaned = False
+
+    def set_next(
+        self,
+        source: discord.AudioSource,
+        payload: Any,
+        *,
+        duration: Optional[int],
+        crossfade_seconds: float,
+        start_at_seconds: Optional[float] = None,
+        mix_curve: str = "equal_power",
+        minimum_start_ratio: float = 0.88,
+    ) -> bool:
+        with self._lock:
+            if self._cleaned or self._next is not None or not self.duration:
+                source.cleanup()
+                return False
+            requested = max(1, round(crossfade_seconds * self.FRAMES_PER_SECOND))
+            end_frame = max(1, round(self.duration * self.FRAMES_PER_SECOND))
+            planned_start = (
+                round(start_at_seconds * self.FRAMES_PER_SECOND)
+                if start_at_seconds is not None
+                else end_frame - requested
+            )
+            guarded_start = round(
+                end_frame * max(0.5, min(0.98, minimum_start_ratio))
+            )
+            self._transition_start = max(
+                self._frames_played,
+                min(end_frame - 1, max(guarded_start, planned_start)),
+            )
+            self._transition_frames = max(1, end_frame - self._transition_start)
+            self._next = source
+            self._next_payload = payload
+            self._next_duration = duration
+            self._next_frames_read = 0
+            self._mix_curve = mix_curve
+            self._premature_end = False
+            return True
+
+    @property
+    def next_ready(self) -> bool:
+        with self._lock:
+            return self._next is not None
+
+    @property
+    def premature_end(self) -> bool:
+        with self._lock:
+            return self._premature_end
+
+    def clear_next(self) -> None:
+        with self._lock:
+            source = self._next
+            self._next = None
+            self._next_payload = None
+            self._next_duration = None
+            self._transition_frames = 0
+            self._next_frames_read = 0
+            self._mix_curve = "equal_power"
+        if source:
+            source.cleanup()
+
+    def set_volume(self, volume: float) -> None:
+        with self._lock:
+            for source in (self.original, self._next):
+                if isinstance(source, discord.PCMVolumeTransformer):
+                    source.volume = volume
+
+    def read(self) -> bytes:
+        callback: Optional[tuple[Any, float]] = None
+        with self._lock:
+            if self._cleaned:
+                return b""
+
+            current = self.original.read()
+            if not current:
+                if not self._next:
+                    return b""
+                if self._frames_played < self._transition_start:
+                    self._premature_end = True
+                    return b""
+                promoted = self._promote_locked()
+                callback = (promoted, self._next_frames_read / self.FRAMES_PER_SECOND)
+                data = self.original.read()
+                self._frames_played += bool(data)
+            elif not self._next or self._frames_played < self._transition_start:
+                data = current
+                self._frames_played += 1
+            else:
+                incoming = self._next.read()
+                if not incoming:
+                    self._next.cleanup()
+                    self._next = None
+                    self._next_payload = None
+                    self._next_duration = None
+                    self._transition_frames = 0
+                    data = current
+                    self._frames_played += 1
+                else:
+                    self._next_frames_read += 1
+                    position = self._frames_played - self._transition_start + 1
+                    progress = min(1.0, position / self._transition_frames)
+                    data = self._mix(current, incoming, progress, self._mix_curve)
+                    self._frames_played += 1
+                    if position >= self._transition_frames:
+                        payload = self._promote_locked()
+                        callback = (payload, self._frames_played / self.FRAMES_PER_SECOND)
+
+        if callback:
+            payload, overlap = callback
+            self.on_transition(payload, overlap)
+        return data
+
+    def _promote_locked(self) -> Any:
+        previous = self.original
+        payload = self._next_payload
+        overlap_frames = self._next_frames_read
+        self.original = self._next
+        self.duration = self._next_duration
+        self._frames_played = overlap_frames
+        self._next = None
+        self._next_payload = None
+        self._next_duration = None
+        self._transition_start = 0
+        self._transition_frames = 0
+        self._next_frames_read = 0
+        self._mix_curve = "equal_power"
+        self._premature_end = False
+        previous.cleanup()
+        return payload
+
+    @staticmethod
+    def _mix(
+        current: bytes,
+        incoming: bytes,
+        progress: float,
+        curve: str = "equal_power",
+    ) -> bytes:
+        if len(current) != len(incoming):
+            return incoming if progress >= 0.5 else current
+        left = array("h")
+        right = array("h")
+        left.frombytes(current)
+        right.frombytes(incoming)
+        if sys.byteorder != "little":
+            left.byteswap()
+            right.byteswap()
+        if curve == "equal_power":
+            old_gain = math.cos(progress * math.pi / 2)
+            new_gain = math.sin(progress * math.pi / 2)
+        else:
+            old_gain = 1.0 - progress
+            new_gain = progress
+        for index in range(min(len(left), len(right))):
+            mixed = round(left[index] * old_gain + right[index] * new_gain)
+            left[index] = max(-32768, min(32767, mixed))
+        if sys.byteorder != "little":
+            left.byteswap()
+        return left.tobytes()
+
+    def is_opus(self) -> bool:
+        return False
+
+    def cleanup(self) -> None:
+        with self._lock:
+            if self._cleaned:
+                return
+            self._cleaned = True
+            current = self.original
+            incoming = self._next
+            self._next = None
+        current.cleanup()
+        if incoming:
+            incoming.cleanup()
 
 
 class PipedFFmpegAudio(discord.AudioSource):

@@ -24,6 +24,16 @@ class LoopMode(str, Enum):
 
 
 @dataclass(frozen=True, slots=True)
+class AudioAnalysisSummary:
+    bpm: float
+    key: str
+    key_name: str
+    key_confidence: float
+    energy: float
+    vocal_activity: float
+
+
+@dataclass(frozen=True, slots=True)
 class Track:
     title: str
     url: str
@@ -53,6 +63,10 @@ class PlaybackSnapshot:
     fair_queue: bool = False
     autoplay: bool = False
     radio_label: Optional[str] = None
+    dj_mix: bool = False
+    analysis: Optional[AudioAnalysisSummary] = None
+    analysis_pending: bool = False
+    smart_reorder: bool = False
 
 
 @dataclass
@@ -72,6 +86,8 @@ class PlaybackState:
     fair_queue: bool = False
     autoplay: bool = False
     radio_label: Optional[str] = None
+    dj_mix: bool = False
+    smart_reorder: bool = False
     last_requester_id: Optional[int] = None
     priority_count: int = 0
 
@@ -109,6 +125,36 @@ class PlaybackState:
         self.paused_seconds = 0.0
         self.generation += 1
         return self.current
+
+    def peek_next(self) -> Optional[Track]:
+        if not self.queue:
+            return None
+        if self.priority_count:
+            return self.queue[0]
+        if self.fair_queue and self.last_requester_id is not None:
+            return next(
+                (
+                    track
+                    for track in self.queue
+                    if track.requester_id != self.last_requester_id
+                ),
+                self.queue[0],
+            )
+        return self.queue[0]
+
+    def promote(self, track: Track, *, offset: float = 0.0, speed: float = 1.0) -> bool:
+        try:
+            index = self.queue.index(track)
+            self.queue.remove(track)
+        except ValueError:
+            return False
+        if index < self.priority_count:
+            self.priority_count -= 1
+        self.current = track
+        self.last_requester_id = track.requester_id
+        self.skip_requested = False
+        self.mark_started(offset=offset, speed=speed)
+        return True
 
     def mark_started(self, *, offset: float = 0.0, speed: float = 1.0) -> None:
         self.started_at = time.time()
@@ -175,6 +221,8 @@ class PlaybackState:
             fair_queue=self.fair_queue,
             autoplay=self.autoplay,
             radio_label=self.radio_label,
+            dj_mix=self.dj_mix,
+            smart_reorder=self.smart_reorder,
         )
 
 

@@ -5,7 +5,7 @@ import discord
 from PIL import Image
 
 from music.effects import AudioEffect, EqualizerPreset
-from music.models import LoopMode, PlaybackSnapshot, Track, TrackSource
+from music.models import AudioAnalysisSummary, LoopMode, PlaybackSnapshot, Track, TrackSource
 from music.repository import HistoryEntry, ListeningStats, MusicProfile
 from music.ui.audio_settings import AudioSettingsView
 from music.ui.card import PlayerCardRenderer
@@ -85,6 +85,14 @@ class PlayerUITests(unittest.IsolatedAsyncioTestCase):
             queue=(),
             volume=0.75,
             loop_mode=LoopMode.TRACK,
+            analysis=AudioAnalysisSummary(
+                bpm=96.2,
+                key="3A",
+                key_name="A# minor",
+                key_confidence=0.72,
+                energy=0.82,
+                vocal_activity=0.44,
+            ),
         )
 
         status = PlayerLayoutView._status_text(snapshot, paused=False)
@@ -94,6 +102,10 @@ class PlayerUITests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("VOL 75%", status)
         self.assertIn("OFFICIAL MV", status)
         self.assertIn("1.2M VIEWS", status)
+        self.assertIn("96 BPM", status)
+        self.assertIn("KEY 3A", status)
+        self.assertIn("ENERGY 82%", status)
+        self.assertIn("VOCAL 44%", status)
 
     async def test_search_results_and_track_actions_match_result_count(self) -> None:
         tracks = [
@@ -128,6 +140,8 @@ class PlayerUITests(unittest.IsolatedAsyncioTestCase):
                 (1, "Shuffle"),
                 (1, "Fair Queue: Off"),
                 (1, "Autoplay: Off"),
+                (1, "DJ Mix V5: Off"),
+                (1, "Smart Order: Off"),
                 (2, "Save"),
                 (2, "Clear"),
             ],
@@ -147,6 +161,14 @@ class PlayerUITests(unittest.IsolatedAsyncioTestCase):
             volume=0.5,
             loop_mode=LoopMode.OFF,
             elapsed=60,
+            analysis=AudioAnalysisSummary(
+                bpm=128,
+                key="8A",
+                key_name="A minor",
+                key_confidence=0.8,
+                energy=0.76,
+                vocal_activity=0.38,
+            ),
         )
         try:
             data = await renderer.render(snapshot, paused=False)
@@ -209,7 +231,7 @@ class PlayerUITests(unittest.IsolatedAsyncioTestCase):
 
         mood_select = next(item for item in ai.children if isinstance(item, discord.ui.Select))
         radio_select = next(item for item in radio.children if isinstance(item, discord.ui.Select))
-        self.assertEqual(len(mood_select.options), 16)
+        self.assertEqual(len(mood_select.options), 17)
         self.assertEqual(len(radio_select.options), 5)
         self.assertEqual(ai.start.label, "Generate Mix")
         self.assertEqual(radio.start.label, "Start Radio")

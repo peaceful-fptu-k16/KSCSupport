@@ -64,6 +64,8 @@ class QueueView(discord.ui.View):
                 f"{len(snapshot.queue)} bài · {format_duration(total_seconds)} · "
                 f"Công bằng {'Bật' if snapshot.fair_queue else 'Tắt'} · "
                 f"Tự phát {'Bật' if snapshot.autoplay else 'Tắt'} · "
+                f"DJ Mix V5 {'Bật' if snapshot.dj_mix else 'Tắt'} · "
+                f"Smart Order {'Bật' if snapshot.smart_reorder else 'Tắt'} · "
                 f"Trang {self.page + 1}/{page_count}"
             )
         )
@@ -77,6 +79,16 @@ class QueueView(discord.ui.View):
         self.autoplay.label = f"Autoplay: {'On' if snapshot.autoplay else 'Off'}"
         self.autoplay.style = (
             discord.ButtonStyle.success if snapshot.autoplay else discord.ButtonStyle.secondary
+        )
+        self.dj_mix.label = f"DJ Mix V5: {'On' if snapshot.dj_mix else 'Off'}"
+        self.dj_mix.style = (
+            discord.ButtonStyle.success if snapshot.dj_mix else discord.ButtonStyle.secondary
+        )
+        self.smart_reorder.label = f"Smart Order: {'On' if snapshot.smart_reorder else 'Off'}"
+        self.smart_reorder.style = (
+            discord.ButtonStyle.success
+            if snapshot.smart_reorder
+            else discord.ButtonStyle.secondary
         )
         self.clear.disabled = not snapshot.queue
         self.save.disabled = not snapshot.current and not snapshot.queue
@@ -152,6 +164,58 @@ class QueueView(discord.ui.View):
             session = self.manager.session(self.guild_id)
             snapshot = await session.snapshot()
             await session.set_autoplay(not snapshot.autoplay)
+            await self.ui.render(self.guild_id)
+            embed, view = await self.payload()
+            await interaction.edit_original_response(embed=embed, view=view)
+        except MusicError as error:
+            if interaction.response.is_done():
+                await interaction.followup.send(error.message, ephemeral=True)
+            else:
+                await interaction.response.send_message(error.message, ephemeral=True)
+
+    @discord.ui.button(
+        label="DJ Mix V5: Off",
+        emoji="🎛️",
+        style=discord.ButtonStyle.secondary,
+        row=1,
+    )
+    async def dj_mix(
+        self,
+        interaction: discord.Interaction,
+        _button: discord.ui.Button,
+    ) -> None:
+        try:
+            await require_control_voice(interaction)
+            await interaction.response.defer()
+            session = self.manager.session(self.guild_id)
+            snapshot = await session.snapshot()
+            await session.set_dj_mix(not snapshot.dj_mix)
+            await self.ui.render(self.guild_id)
+            embed, view = await self.payload()
+            await interaction.edit_original_response(embed=embed, view=view)
+        except MusicError as error:
+            if interaction.response.is_done():
+                await interaction.followup.send(error.message, ephemeral=True)
+            else:
+                await interaction.response.send_message(error.message, ephemeral=True)
+
+    @discord.ui.button(
+        label="Smart Order: Off",
+        emoji="🧠",
+        style=discord.ButtonStyle.secondary,
+        row=1,
+    )
+    async def smart_reorder(
+        self,
+        interaction: discord.Interaction,
+        _button: discord.ui.Button,
+    ) -> None:
+        try:
+            await require_control_voice(interaction)
+            await interaction.response.defer()
+            session = self.manager.session(self.guild_id)
+            snapshot = await session.snapshot()
+            await session.set_smart_reorder(not snapshot.smart_reorder)
             await self.ui.render(self.guild_id)
             embed, view = await self.payload()
             await interaction.edit_original_response(embed=embed, view=view)

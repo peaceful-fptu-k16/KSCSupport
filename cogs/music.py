@@ -667,6 +667,80 @@ class Music(commands.Cog):
         except MusicError as error:
             await self._reply(ctx, error.message)
 
+    @commands.hybrid_command(
+        name="djmix",
+        aliases=["autodjmix"],
+        description="Harmonic mix, vocal-safe fade và căn beat tự động",
+    )
+    @app_commands.describe(mode="Bật hoặc tắt; bỏ trống để chuyển trạng thái")
+    @app_commands.choices(
+        mode=[
+            app_commands.Choice(name="Bật", value="on"),
+            app_commands.Choice(name="Tắt", value="off"),
+        ]
+    )
+    async def dj_mix(self, ctx: commands.Context, mode: str | None = None) -> None:
+        if not ctx.guild:
+            return
+        try:
+            await self._same_voice(ctx)
+            session = self.player_manager.session(ctx.guild.id)
+            current = (await session.snapshot()).dj_mix
+            enabled = (
+                not current
+                if mode is None
+                else mode.lower() in {"on", "bat", "bật", "true", "1"}
+            )
+            await session.set_dj_mix(enabled)
+            await self.ui.render(ctx.guild.id)
+            await self._reply(
+                ctx,
+                (
+                    "🎛️ DJ Mix V5: **Bật** · structural, harmonic và vocal-safe đã sẵn sàng."
+                    if enabled
+                    else "🎛️ DJ Mix V5: **Tắt**"
+                ),
+            )
+        except MusicError as error:
+            await self._reply(ctx, error.message)
+
+    @commands.hybrid_command(
+        name="smartorder",
+        aliases=["smartreorder"],
+        description="Tối ưu thứ tự bài theo BPM, key, energy và độ phổ biến",
+    )
+    @app_commands.describe(mode="Bật hoặc tắt; bỏ trống để chuyển trạng thái")
+    @app_commands.choices(
+        mode=[
+            app_commands.Choice(name="Bật", value="on"),
+            app_commands.Choice(name="Tắt", value="off"),
+        ]
+    )
+    async def smart_order(self, ctx: commands.Context, mode: str | None = None) -> None:
+        if not ctx.guild:
+            return
+        try:
+            await self._same_voice(ctx)
+            session = self.player_manager.session(ctx.guild.id)
+            current = (await session.snapshot()).smart_reorder
+            enabled = (
+                not current
+                if mode is None
+                else mode.lower() in {"on", "bat", "bật", "true", "1"}
+            )
+            await session.set_smart_reorder(enabled)
+            await self.ui.render(ctx.guild.id)
+            await self._reply(
+                ctx,
+                (
+                    "🧠 Smart Order: **Bật** · bot sẽ tối ưu cửa sổ bài kế tiếp."
+                    if enabled
+                    else "🧠 Smart Order: **Tắt** · giữ nguyên thứ tự queue."
+                ),
+            )
+        except MusicError as error:
+            await self._reply(ctx, error.message)
+
     @commands.hybrid_command(name="shuffle", description="Xáo trộn hàng đợi")
     async def shuffle(self, ctx: commands.Context) -> None:
         if not ctx.guild:
@@ -721,6 +795,7 @@ class Music(commands.Cog):
                 f"`{prefix}queue` · `{prefix}nowplaying` · `{prefix}volume 50`\n"
                 f"`{prefix}loop off|track|queue` · `{prefix}shuffle` · `{prefix}clearqueue`\n"
                 f"`{prefix}congbang on|off` · `{prefix}tuphat on|off`\n"
+                f"`{prefix}djmix on|off` · crossfade và căn BPM tự động\n"
                 f"`{prefix}yeuthich` · `{prefix}playlist` · `{prefix}loibaihat`\n"
                 f"`{prefix}hieuung` · `{prefix}equalizer` · `{prefix}lichsu` · `{prefix}thongke`"
                 f"\n`{prefix}aidj` · `{prefix}radio` · `{prefix}party` · `{prefix}hoso` · `{prefix}wrapped`"

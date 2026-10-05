@@ -95,12 +95,38 @@ class PlaybackStateTests(unittest.TestCase):
         self.assertEqual(state.priority_count, 0)
 
     def test_snapshot_exposes_queue_modes(self) -> None:
-        state = PlaybackState(fair_queue=True, autoplay=True)
+        state = PlaybackState(
+            fair_queue=True,
+            autoplay=True,
+            dj_mix=True,
+            smart_reorder=True,
+        )
 
         snapshot = state.snapshot()
 
         self.assertTrue(snapshot.fair_queue)
         self.assertTrue(snapshot.autoplay)
+        self.assertTrue(snapshot.dj_mix)
+        self.assertTrue(snapshot.smart_reorder)
+
+    def test_peek_next_matches_fair_queue_without_mutating_it(self) -> None:
+        state = PlaybackState(fair_queue=True, last_requester_id=1)
+        state.enqueue([track("a2", 1), track("b1", 2)])
+
+        self.assertEqual(state.peek_next().title, "b1")
+        self.assertEqual([item.title for item in state.queue], ["a2", "b1"])
+
+    def test_promote_removes_prefetched_track_and_starts_it(self) -> None:
+        state = PlaybackState()
+        current = track("current")
+        incoming = track("incoming")
+        state.current = current
+        state.enqueue([incoming])
+
+        self.assertTrue(state.promote(incoming, offset=5, speed=1.02))
+        self.assertEqual(state.current, incoming)
+        self.assertEqual(tuple(state.queue), ())
+        self.assertGreaterEqual(state.elapsed(), 5)
 
 
 if __name__ == "__main__":

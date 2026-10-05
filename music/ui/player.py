@@ -301,6 +301,10 @@ class PlayerLayoutView(discord.ui.LayoutView):
             modes.append("FAIR QUEUE")
         if snapshot.autoplay:
             modes.append("AUTOPLAY")
+        if snapshot.dj_mix:
+            modes.append("DJ MIX V5")
+        if snapshot.smart_reorder:
+            modes.append("SMART ORDER")
         if snapshot.radio_label:
             modes.append(f"RADIO {snapshot.radio_label.upper()}")
         details = []
@@ -310,6 +314,17 @@ class PlayerLayoutView(discord.ui.LayoutView):
             details.append(f"{format_compact_number(snapshot.current.view_count)} VIEWS")
         if snapshot.current.view_growth_7d:
             details.append(f"+{format_compact_number(snapshot.current.view_growth_7d)} / 7D")
+        if snapshot.analysis:
+            details.extend(
+                (
+                    f"{round(snapshot.analysis.bpm)} BPM",
+                    f"KEY {snapshot.analysis.key}",
+                    f"ENERGY {round(snapshot.analysis.energy * 100)}%",
+                    f"VOCAL {round(snapshot.analysis.vocal_activity * 100)}%",
+                )
+            )
+        elif snapshot.analysis_pending:
+            details.append("ANALYZING AUDIO")
         metadata = f"\n-# {' · '.join(details)}" if details else ""
         return (
             f"### {state} · [{snapshot.current.title}]({snapshot.current.url})\n"
